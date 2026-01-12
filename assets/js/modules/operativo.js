@@ -42,6 +42,10 @@ window.OperativoModule = {
         document.getElementById('btn-requests')?.addEventListener('click', () => {
             alert('Módulo Solicitudes: Próximamente');
         });
+
+        document.getElementById('btn-load-consumption')?.addEventListener('click', () => {
+            window.location.href = '../herramientas/herramientas-analisis.html';
+        });
         
         // Close Dashboard
         document.getElementById('btn-close-dashboard')?.addEventListener('click', () => {
@@ -115,7 +119,8 @@ window.OperativoModule = {
             const dateStr = new Date(event.date).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
             
             const chip = document.createElement('div');
-            chip.className = 'date-chip';
+            chip.className = 'chip-date cursor-pointer'; // Added cursor-pointer
+            chip.style.margin = '0 4px'; // Add spacing
             chip.textContent = dateStr.toUpperCase();
             chip.onclick = () => this.selectEvent(event, chip);
             
@@ -126,8 +131,8 @@ window.OperativoModule = {
     selectEvent: function(event, chipEl) {
         this.activeEvent = event;
 
-        // Highlight Active Chip (Black Style handled by CSS)
-        document.querySelectorAll('.date-chip').forEach(c => c.classList.remove('active'));
+        // Highlight Active Chip
+        document.querySelectorAll('.chip-date').forEach(c => c.classList.remove('active'));
         chipEl.classList.add('active');
 
         // Show Action Container

@@ -476,4 +476,12 @@ body{
   display: inline-block;
   font-size: 0.85rem;
   letter-spacing: 0.02em;
+  transition: all 0.2s ease;
+}
+.chip-date.cursor-pointer {
+    cursor: pointer;
+}
+.chip-date.active {
+    background: var(--primary-color, #FF3B30); /* Highlight active */
+    transform: scale(1.05);
 }

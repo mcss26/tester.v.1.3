@@ -169,7 +169,7 @@ window.AuthModule = {
             { match: /\/pages\/master\//, roles: ['admin'] },
             { match: /\/pages\/admin\//, roles: ['admin'] },
             { match: /\/pages\/contabilidad\//, roles: ['admin'] },
-            { match: /\/pages\/herramientas\//, roles: ['admin'] },
+            { match: /\/pages\/herramientas\//, roles: ['admin', 'operativo'] },
             { match: /\/pages\/gerencia\//, roles: ['gerencia'] },
             { match: /\/pages\/logistica\//, roles: ['logistica'] },
             { match: /\/pages\/operativo\//, roles: ['operativo'] },
