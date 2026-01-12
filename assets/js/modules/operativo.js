@@ -245,14 +245,13 @@ window.OperativoModule = {
         const label = document.getElementById('event-date-label');
         if (!label) return;
 
-        if (this.activeMode !== 'erp') {
+        if (this.activeMode !== 'erp' || !this.activeEvent) {
+            label.textContent = '';
             label.classList.add('hidden');
             return;
         }
 
-        const dateText = this.activeEvent
-            ? new Date(this.activeEvent.date).toLocaleDateString('es-AR', { day: 'numeric', month: 'long' })
-            : '-';
+        const dateText = new Date(this.activeEvent.date).toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
         label.textContent = `Evento: ${dateText}`;
         label.classList.remove('hidden');
     },
