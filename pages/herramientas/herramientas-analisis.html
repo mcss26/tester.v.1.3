@@ -97,10 +97,86 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Init Auth
             if (window.AuthModule) await window.AuthModule.init();
-            // Correct key for layout mapping
-            window.LayoutModule.injectLayout('herramientas-analisis');
+
+            // 2. Determine Role (Robust check)
+            let role = 'user';
+            const sb = window.sb;
+            if (sb) {
+                const { data: { session } } = await sb.auth.getSession();
+                if (session) {
+                    const { data: profile } = await sb.from('profiles').select('role').eq('id', session.user.id).single();
+                    if (profile) role = profile.role.toLowerCase();
+                }
+            }
+
+            // 3. Conditional Layout
+            if (role === 'operativo') {
+                // --- OPERATIVO MODE (Red Aurora Theme) ---
+                console.log('Mode: Operativo (Minimalist)');
+
+                // A. Swap CSS
+                const baseCss = document.querySelector('link[href*="base.css"]');
+                if (baseCss) baseCss.remove();
+
+                const newLink = document.createElement('link');
+                newLink.rel = 'stylesheet';
+                newLink.href = '../../assets/css/index.css'; 
+                document.head.appendChild(newLink);
+
+                // B. Add Body Class & Styling overrides via JS (or inject style block)
+                document.body.classList.add('operativo-mode');
+                
+                // Add specific overrides for this page to look good in "Red Mode"
+                const style = document.createElement('style');
+                style.innerHTML = `
+                    body.operativo-mode {
+                        background: radial-gradient(circle at 50% 30%, #5e0a0a 0%, #1a0000 60%, #000000 100%); /* Force Red Bg */
+                        color: white !important;
+                        padding: 20px;
+                        min-height: 100vh;
+                    }
+                    .operativo-mode .app-container { grid-template-columns: 1fr; }
+                    .operativo-mode #sidebar-container, .operativo-mode #header-container { display: none; }
+                    .operativo-mode .card {
+                        background: rgba(255, 255, 255, 0.05); /* Glass */
+                        border: 1px solid rgba(255,255,255,0.1);
+                        color: white;
+                        border-radius: 24px;
+                    }
+                    .operativo-mode h3 { color: white; }
+                    .operativo-mode .text-muted { color: rgba(255,255,255,0.6) !important; }
+                    .operativo-mode label { color: rgba(255,255,255,0.8); }
+                    .operativo-mode input { 
+                        background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white;
+                    }
+                    /* Back Button */
+                    .back-btn {
+                        display: inline-flex; align-items: center; gap: 8px;
+                        background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 20px;
+                        color: white; text-decoration: none; font-size: 14px; margin-bottom: 20px;
+                        backdrop-filter: blur(10px); transition: all 0.2s;
+                    }
+                    .back-btn:hover { background: rgba(255,255,255,0.2); }
+                `;
+                document.head.appendChild(style);
+
+                // C. Inject Back Button
+                const container = document.querySelector('.app-container main'); // Insert before content
+                const backBtn = document.createElement('a');
+                backBtn.href = '../operativo/operativo-index.html';
+                backBtn.className = 'back-btn';
+                backBtn.innerHTML = '← Volver al Dashboard';
+                if (container) container.prepend(backBtn);
+
+            } else {
+                // --- ADMIN MODE (Standard) ---
+                console.log('Mode: Admin/Standard');
+                window.LayoutModule.injectLayout('herramientas-analisis');
+            }
             
+            // 4. Load Page Logic
             if (window.loadConsumptionAnalysis) {
                 window.loadConsumptionAnalysis();
             } else {
