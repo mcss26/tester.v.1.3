@@ -300,6 +300,10 @@ function renderImportPreview(matched, unmatched, foundHeader) {
     if (!container) return
     container.textContent = ''
 
+    const title = document.createElement('h4')
+    title.textContent = 'Resultados del mapeo'
+    container.appendChild(title)
+
     const summary = document.createElement('div')
     summary.className = 'analysis-summary'
 
@@ -522,6 +526,9 @@ window.analyzeIdealStock = async function() {
     const daysCount = reportIds.length
 
     container.textContent = ''
+    const title = document.createElement('h4')
+    title.textContent = 'Resultados del análisis'
+    container.appendChild(title)
     const summary = document.createElement('div')
     summary.className = 'analysis-summary'
 
