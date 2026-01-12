@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>CRM | Midnight Club</title>
+  <link rel="stylesheet" href="../../assets/css/index.css" />
+  
+  <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script defer src="../../assets/js/core/config.js"></script>
+  <script defer src="../../assets/js/modules/operativo.js"></script>
+</head>
+<body class="welcome-screen" data-page="crm">
+  <main class="center-content">
+    
+    <!-- Header / Nav -->
+    <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <button class="footer-link" onclick="window.location.href='operativo-index.html'" style="padding-left:0;">
+            &larr; Volver
+        </button>
+        <div style="text-align:right;">
+            <p id="user-name" style="margin:0; font-size:12px; font-weight:700; opacity:0.8;">...</p>
+            <p style="margin:0; font-size:10px; opacity:0.5;">CRM MODE</p>
+        </div>
+    </div>
+    
+    <!-- CRM does not need date selection initially -->
+
+    <!-- Actions -->
+    <section class="action-section fade-in">
+      <div class="actions-grid">
+        <button id="btn-crm-requests" class="action-card glass-button">
+          <span class="action-label">Solicitudes</span>
+        </button>
+
+        <button id="btn-crm-access" class="action-card glass-button">
+          <span class="action-label">Accesos</span>
+        </button>
+
+        <button id="btn-crm-birthday" class="action-card glass-button">
+          <span class="action-label">Cumpleaños</span>
+        </button>
+        
+        <!-- Redirects to dedicated page -->
+        <a href="../../carta.html" class="action-card glass-button" style="text-decoration:none;">
+          <span class="action-label">Carta</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Dashboard/Work Area -->
+    <section id="staff-dashboard" class="staff-dashboard hidden">
+      <header class="dashboard-header">
+        <div>
+          <h3 id="dashboard-title" style="margin:0; font-size:18px;">Dashboard</h3>
+          <p id="dashboard-subtitle" class="dashboard-subtitle"></p>
+        </div>
+        <div class="header-actions">
+           <div id="dashboard-toolbar" class="hidden"></div>
+           <button class="btn-icon" id="btn-close-dashboard">&times;</button>
+        </div>
+      </header>
+      <div id="content-list" class="staff-list"></div>
+    </section>
+
+  </main>
+</body>
+</html>

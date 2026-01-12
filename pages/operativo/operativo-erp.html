@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ERP | Midnight Club</title>
+  <link rel="stylesheet" href="../../assets/css/index.css" />
+  
+  <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script defer src="../../assets/js/core/config.js"></script>
+  <script defer src="../../assets/js/modules/analysis-helpers.js"></script>
+  <script defer src="../../assets/js/modules/operativo.js"></script>
+</head>
+<body class="welcome-screen" data-page="erp">
+  <main class="center-content">
+    
+    <!-- Header / Nav -->
+    <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <button class="footer-link" onclick="window.location.href='operativo-index.html'" style="padding-left:0;">
+            &larr; Volver
+        </button>
+        <div style="text-align:right;">
+            <p id="user-name" style="margin:0; font-size:12px; font-weight:700; opacity:0.8;">...</p>
+            <p style="margin:0; font-size:10px; opacity:0.5;">ERP MODE</p>
+        </div>
+    </div>
+
+    <!-- Date Selection -->
+    <section class="dates-section fade-in">
+      <div id="date-chips" class="chips-row">
+        <div class="skeleton-chip"></div>
+        <div class="skeleton-chip"></div>
+        <div class="skeleton-chip"></div>
+      </div>
+    </section>
+
+    <!-- Actions -->
+    <section id="action-container" class="action-section hidden">
+      <div class="actions-grid">
+        <button id="btn-open-convocation" class="action-card glass-button">
+          <span class="action-label">Convocar</span>
+        </button>
+
+        <button id="btn-stock-check" class="action-card glass-button">
+          <span class="action-label">Stock Check</span>
+        </button>
+
+        <button id="btn-requests" class="action-card glass-button">
+          <span class="action-label">Solicitudes</span>
+        </button>
+
+        <button id="btn-load-consumption" class="action-card glass-button">
+          <span class="action-label">Cargar Consumos</span>
+        </button>
+
+        <!-- New SKU Button -->
+        <button id="btn-sku-list" class="action-card glass-button">
+            <span class="action-label">SKU</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Dashboard/Work Area -->
+    <section id="staff-dashboard" class="staff-dashboard hidden">
+      <header class="dashboard-header">
+        <div>
+          <h3 id="dashboard-title" style="margin:0; font-size:18px;">Dashboard</h3>
+          <p id="dashboard-subtitle" class="dashboard-subtitle"></p>
+          <div id="allocation-subtitle" style="display:none; margin-top:4px;"></div>
+        </div>
+        <div class="header-actions">
+           <div id="dashboard-toolbar" class="hidden"></div>
+           <button class="btn-icon" id="btn-close-dashboard">&times;</button>
+        </div>
+      </header>
+      <div id="content-list" class="staff-list"></div>
+    </section>
+
+  </main>
+</body>
+</html>

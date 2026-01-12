@@ -20,6 +20,8 @@ window.OperativoModule = {
     activeMode: 'erp',
 
     init: async function() {
+        console.log('OperativoModule init...');
+        
         // 1. Check Session & Auth
         if (!window.sb) return;
         const { data: { session }, error } = await window.sb.auth.getSession();
@@ -29,16 +31,24 @@ window.OperativoModule = {
             return;
         }
         this.session = session;
-        this.bindUI();
+        await this.loadUserProfile(session.user.id);
         
-        // 2. Load Profile + Open Events in parallel
-        await Promise.all([
-            this.loadUserProfile(session.user.id),
-            this.loadOpenEvents()
-        ]);
+        // 2. Identify Page Context
+        const page = document.body.dataset.page; // 'erp', 'crm', or undefined (index)
+        
+        if (page === 'erp') {
+            this.activeMode = 'erp';
+            this.bindUI_ERP();
+            this.loadOpenEvents();
+        } else if (page === 'crm') {
+            this.activeMode = 'crm';
+            this.bindUI_CRM();
+        } else {
+            // Index page (Greeting only)
+        }
     },
 
-    bindUI: function() {
+    bindUI_ERP: function() {
         // Actions
         document.getElementById('btn-open-convocation')?.addEventListener('click', () => {
             this.openDashboard('convocation');
@@ -49,37 +59,24 @@ window.OperativoModule = {
         });
 
         document.getElementById('btn-requests')?.addEventListener('click', () => {
-            this.openDashboard('requests');
+            this.openDashboard('requests'); // ERP Request View
         });
 
         document.getElementById('btn-load-consumption')?.addEventListener('click', () => {
             this.openDashboard('analysis');
         });
         
-        // Close Dashboard
-        document.getElementById('btn-close-dashboard')?.addEventListener('click', () => {
-            document.getElementById('staff-dashboard').classList.add('hidden');
+        document.getElementById('btn-sku-list')?.addEventListener('click', () => {
+             alert('Módulo SKU: En desarrollo');
         });
+        
+        this.bindCommonUI();
+    },
 
-        // Logout
-        document.getElementById('btn-logout')?.addEventListener('click', async () => {
-            if (window.sb) {
-                await window.sb.auth.signOut();
-                window.location.href = '../../login.html';
-            }
-        });
-
-        // Mode Switcher
-        document.querySelectorAll('.mode-chip').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const mode = e.target.dataset.mode;
-                if (mode) this.setMode(mode);
-            });
-        });
-
-        // CRM Actions (Placeholders)
+    bindUI_CRM: function() {
+        // CRM Actions
         document.getElementById('btn-crm-requests')?.addEventListener('click', () => {
-             this.openDashboard('requests'); // Reusing requests dashboard
+             this.openDashboard('requests'); // CRM Request View (might be same as ERP for now)
         });
         document.getElementById('btn-crm-access')?.addEventListener('click', () => {
              alert('Módulo de Accesos: Próximamente');
@@ -87,9 +84,21 @@ window.OperativoModule = {
         document.getElementById('btn-crm-birthday')?.addEventListener('click', () => {
              alert('Módulo de Cumpleaños: Próximamente');
         });
-        document.getElementById('btn-crm-menu')?.addEventListener('click', () => {
-             // Redirect to Carta if available, or placeholder
-             window.location.href = '../../carta.html'; 
+        
+        this.bindCommonUI();
+    },
+
+    bindCommonUI: function() {
+        // Common Dashboard bindings
+        document.getElementById('btn-close-dashboard')?.addEventListener('click', () => {
+            document.getElementById('staff-dashboard').classList.add('hidden');
+        });
+
+        document.getElementById('btn-logout')?.addEventListener('click', async () => {
+            if (window.sb) {
+                await window.sb.auth.signOut();
+                window.location.href = '../../login.html';
+            }
         });
     },
 
@@ -115,7 +124,6 @@ window.OperativoModule = {
         const role = (data.role || '').toLowerCase();
         
         if (role !== 'operativo') {
-            // alert('Acceso no autorizado.');
             window.location.href = '../../login.html';
             return;
         }
@@ -153,8 +161,7 @@ window.OperativoModule = {
                 chipsContainer.innerHTML = '<p style="font-size:12px; opacity:0.6;">No hay eventos abiertos.</p>';
             }
             this.activeEvent = null;
-            this.refreshActionVisibility();
-            this.updateEventDateLabel();
+            this.toggleActionContainer(false);
             return;
         }
 
@@ -162,56 +169,7 @@ window.OperativoModule = {
         this.renderOpenEvents(events, chipsContainer);
     },
 
-    renderOpenEvents: function(events, container) {
-        container.innerHTML = '';
-
-        if (!events || events.length === 0) {
-            container.innerHTML = '<p style="font-size:12px; opacity:0.6;">No hay eventos abiertos.</p>';
-            return;
-        }
-
-        const fragment = document.createDocumentFragment();
-        events.forEach(event => {
-            const dateStr = new Date(event.date).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
-            
-            const chip = document.createElement('div');
-            chip.className = 'chip-date cursor-pointer';
-            chip.style.margin = '0 4px';
-            chip.textContent = dateStr.toUpperCase();
-            chip.onclick = () => this.selectEvent(event, chip);
-            
-            fragment.appendChild(chip);
-        });
-        container.appendChild(fragment);
-        container.scrollTo({ left: 0 });
-    },
-
-    getCachedOpenEvents: function() {
-        try {
-            const raw = window.sessionStorage.getItem('op-open-events');
-            if (!raw) return null;
-            const parsed = JSON.parse(raw);
-            if (!parsed || !Array.isArray(parsed.events)) return null;
-            const ageMs = Date.now() - parsed.timestamp;
-            return {
-                events: parsed.events,
-                fresh: ageMs < 60000
-            };
-        } catch (err) {
-            return null;
-        }
-    },
-
-    setCachedOpenEvents: function(events) {
-        try {
-            window.sessionStorage.setItem('op-open-events', JSON.stringify({
-                events,
-                timestamp: Date.now()
-            }));
-        } catch (err) {
-            // Ignore storage errors (quota/private mode)
-        }
-    },
+    // ... renderOpenEvents ...
 
     selectEvent: function(event, chipEl) {
         this.activeEvent = event;
@@ -221,61 +179,19 @@ window.OperativoModule = {
         document.querySelectorAll('.chip-date').forEach(c => c.classList.remove('active'));
         chipEl.classList.add('active');
 
-        // Show Action Container based on Mode
-        this.refreshActionVisibility();
-        this.updateEventDateLabel();
+        // Show Actions
+        this.toggleActionContainer(true);
         
         // Hide dashboard if open
         document.getElementById('staff-dashboard').classList.add('hidden');
     },
 
-    setMode: function(mode) {
-        if (this.activeMode === mode) return;
-        this.activeMode = mode;
-        
-        // Update Chips UI
-        document.querySelectorAll('.mode-chip').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.mode === mode);
-        });
-
-        // Update Visibility
-        this.refreshActionVisibility();
-        this.updateEventDateLabel();
-        
-        // Optional: Close dashboard on mode switch?
-        document.getElementById('staff-dashboard').classList.add('hidden');
-    },
-
-    updateEventDateLabel: function() {
-        const label = document.getElementById('event-date-label');
-        if (!label) return;
-
-        if (this.activeMode !== 'erp' || !this.activeEvent) {
-            label.textContent = '';
-            label.classList.add('hidden');
-            return;
-        }
-
-        const dateText = new Date(this.activeEvent.date).toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
-        label.textContent = `Evento: ${dateText}`;
-        label.classList.remove('hidden');
-    },
-
-    refreshActionVisibility: function() {
+    toggleActionContainer: function(show) {
+        // ERP only needs this check usually
         const actionContainer = document.getElementById('action-container');
-        const crmContainer = document.getElementById('crm-action-container');
-        
-        // Hide all first
-        if (actionContainer) actionContainer.classList.add('hidden');
-        if (crmContainer) crmContainer.classList.add('hidden');
-
-        // Only show if event is selected
-        if (!this.activeEvent) return;
-
-        if (this.activeMode === 'erp') {
-            if (actionContainer) actionContainer.classList.remove('hidden');
-        } else {
-            if (crmContainer) crmContainer.classList.remove('hidden');
+        if (actionContainer) {
+            if (show) actionContainer.classList.remove('hidden');
+            else actionContainer.classList.add('hidden');
         }
     },
 
