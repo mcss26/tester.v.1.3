@@ -131,34 +131,116 @@
                 // Add specific overrides for this page to look good in "Red Mode"
                 const style = document.createElement('style');
                 style.innerHTML = `
+
+                    /* --- Operativo Mode (Red Aurora) --- */
                     body.operativo-mode {
-                        background: radial-gradient(circle at 50% 30%, #5e0a0a 0%, #1a0000 60%, #000000 100%); /* Force Red Bg */
-                        color: white !important;
+                        background: radial-gradient(circle at 50% 30%, #5e0a0a 0%, #1a0000 60%, #000000 100%);
+                        color: #ffffff !important;
                         padding: 20px;
                         min-height: 100vh;
+                        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
                     }
-                    .operativo-mode .app-container { grid-template-columns: 1fr; }
-                    .operativo-mode #sidebar-container, .operativo-mode #header-container { display: none; }
+
+                    .operativo-mode .app-container { 
+                        grid-template-columns: 1fr; 
+                        max-width: 900px;
+                        margin: 0 auto;
+                    }
+                    
+                    .operativo-mode #sidebar-container, 
+                    .operativo-mode #header-container { display: none; }
+
+                    /* Glass Card */
                     .operativo-mode .card {
-                        background: rgba(255, 255, 255, 0.05); /* Glass */
-                        border: 1px solid rgba(255,255,255,0.1);
-                        color: white;
+                        background: rgba(255, 255, 255, 0.03);
+                        backdrop-filter: blur(20px);
+                        -webkit-backdrop-filter: blur(20px);
+                        border: 1px solid rgba(255, 255, 255, 0.08);
                         border-radius: 24px;
+                        padding: 32px;
+                        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+                        animation: fadeInUp 0.5s ease-out;
                     }
-                    .operativo-mode h3 { color: white; }
-                    .operativo-mode .text-muted { color: rgba(255,255,255,0.6) !important; }
-                    .operativo-mode label { color: rgba(255,255,255,0.8); }
-                    .operativo-mode input { 
-                        background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white;
+
+                    /* Typography */
+                    .operativo-mode h3 { 
+                        font-weight: 700; font-size: 24px; margin-bottom: 4px; letter-spacing: -0.01em; 
                     }
+                    .operativo-mode h4 {
+                        font-weight: 600; font-size: 18px; margin-bottom: 16px; color: rgba(255,255,255,0.9);
+                    }
+                    .operativo-mode .text-muted { 
+                        color: rgba(255, 255, 255, 0.5) !important; font-size: 14px; 
+                    }
+
+                    /* Tabs */
+                    .operativo-mode .tab-container {
+                        display: flex; gap: 10px; margin: 24px 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;
+                    }
+                    .operativo-mode .tab-btn {
+                        background: transparent; border: none; color: rgba(255,255,255,0.6);
+                        padding: 8px 16px; font-size: 14px; font-weight: 500; cursor: pointer;
+                        border-radius: 20px; transition: all 0.2s;
+                    }
+                    .operativo-mode .tab-btn:hover { color: white; background: rgba(255,255,255,0.05); }
+                    .operativo-mode .tab-btn.active {
+                        background: #FF3B30; color: white; box-shadow: 0 2px 10px rgba(255, 59, 48, 0.3);
+                    }
+
+                    /* Forms & Inputs */
+                    .operativo-mode .form-grid {
+                        display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;
+                    }
+                    .operativo-mode label {
+                        display: block; font-size: 12px; font-weight: 500; text-transform: uppercase;
+                        letter-spacing: 0.05em; color: rgba(255,255,255,0.4); margin-bottom: 8px;
+                    }
+                    .operativo-mode input, .operativo-mode select {
+                        width: 100%; padding: 12px 16px;
+                        background: rgba(0, 0, 0, 0.2);
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        border-radius: 12px;
+                        color: white; font-size: 14px;
+                        transition: all 0.2s;
+                    }
+                    .operativo-mode input:focus {
+                        outline: none; border-color: #FF3B30; background: rgba(0,0,0,0.4);
+                    }
+                    .operativo-mode input[type="file"] {
+                        padding: 10px; cursor: pointer;
+                    }
+
+                    /* Buttons */
+                    .operativo-mode .btn-primary {
+                        background: #FF3B30; border: none; color: white;
+                        padding: 12px 24px; border-radius: 12px; font-weight: 600;
+                        cursor: pointer; transition: all 0.2s;
+                        box-shadow: 0 4px 12px rgba(255, 59, 48, 0.2);
+                    }
+                    .operativo-mode .btn-primary:hover {
+                        background: #D70015; transform: translateY(-1px);
+                        box-shadow: 0 6px 16px rgba(255, 59, 48, 0.3);
+                    }
+
                     /* Back Button */
                     .back-btn {
                         display: inline-flex; align-items: center; gap: 8px;
-                        background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 20px;
-                        color: white; text-decoration: none; font-size: 14px; margin-bottom: 20px;
-                        backdrop-filter: blur(10px); transition: all 0.2s;
+                        background: rgba(255, 255, 255, 0.05);
+                        padding: 10px 20px; border-radius: 20px;
+                        color: rgba(255,255,255,0.8); text-decoration: none;
+                        font-size: 14px; font-weight: 500; margin-bottom: 24px;
+                        border: 1px solid rgba(255,255,255,0.05);
+                        transition: all 0.2s;
                     }
-                    .back-btn:hover { background: rgba(255,255,255,0.2); }
+                    .back-btn:hover {
+                        background: rgba(255, 255, 255, 0.1); color: white; border-color: rgba(255,255,255,0.1);
+                    }
+
+                    /* Animations */
+                    @keyframes fadeInUp {
+                        from { opacity: 0; transform: translateY(20px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
                 `;
                 document.head.appendChild(style);
 
