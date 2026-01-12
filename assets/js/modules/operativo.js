@@ -10,6 +10,11 @@ window.OperativoModule = {
     stockItems: [],
     stockFilter: 'active',
     analysisTab: 'importar',
+    analysisCache: {
+        summary: null,
+        history: null
+    },
+    analysisPanels: null,
     dashboardMode: null,
     dashboardRequestId: 0,
     activeMode: 'erp',
@@ -738,7 +743,10 @@ window.OperativoModule = {
         if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
         this.setDashboardTitle('Análisis de Consumo');
         this.setDashboardSubtitle('Importar, analizar e histórico mensual.');
-        this.setDashboardToolbar(null);
+        this.setDashboardToolbar(this.buildActionToolbar('Actualizar', () => {
+            this.clearAnalysisCache();
+            this.handleAnalysisTabChange(this.analysisTab, this.dashboardRequestId);
+        }));
         this.analysisTab = 'importar';
         if (!window.sb) {
             this.setDashboardEmpty('No se pudo conectar con el servidor.');
@@ -768,7 +776,7 @@ window.OperativoModule = {
             btn.classList.toggle('active', this.analysisTab === tab.id);
             btn.addEventListener('click', () => {
                 this.analysisTab = tab.id;
-                this.showAnalysisTab(tab.id);
+                this.handleAnalysisTabChange(tab.id, requestId);
                 tabs.querySelectorAll('button').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
             });
@@ -785,9 +793,11 @@ window.OperativoModule = {
         panel.appendChild(historicoPanel);
         listContainer.appendChild(panel);
 
-        this.showAnalysisTab(this.analysisTab);
-        this.loadAnalysisSummary(analizarPanel, requestId);
-        this.loadHistorySummary(historicoPanel, requestId);
+        this.analysisPanels = {
+            analizar: analizarPanel,
+            historico: historicoPanel
+        };
+        this.handleAnalysisTabChange(this.analysisTab, requestId);
     },
 
     buildAnalysisImportPanel: function() {
@@ -844,6 +854,11 @@ window.OperativoModule = {
             </div>
         `;
         panel.appendChild(container);
+
+        const note = document.createElement('p');
+        note.className = 'op-muted';
+        note.textContent = 'Datos de los últimos 30 días.';
+        panel.appendChild(note);
 
         return panel;
     },
@@ -902,6 +917,24 @@ window.OperativoModule = {
         });
     },
 
+    handleAnalysisTabChange: function(tabId, requestId) {
+        if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
+        this.showAnalysisTab(tabId);
+
+        if (tabId === 'analizar' && this.analysisPanels?.analizar) {
+            this.loadAnalysisSummary(this.analysisPanels.analizar, requestId);
+        }
+
+        if (tabId === 'historico' && this.analysisPanels?.historico) {
+            this.loadHistorySummary(this.analysisPanels.historico, requestId);
+        }
+    },
+
+    clearAnalysisCache: function() {
+        this.analysisCache.summary = null;
+        this.analysisCache.history = null;
+    },
+
     loadAnalysisSummary: async function(panel, requestId) {
         const reportsEl = panel.querySelector('[data-summary="reports"]');
         const totalEl = panel.querySelector('[data-summary="total"]');
@@ -909,6 +942,16 @@ window.OperativoModule = {
         if (!reportsEl || !totalEl || !latestEl) return;
         if (!window.sb) return;
         if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
+
+        const cached = this.analysisCache.summary;
+        if (cached && (Date.now() - cached.timestamp) < 120000) {
+            this.applyAnalysisSummary(cached.data, panel);
+            return;
+        }
+
+        reportsEl.textContent = '...';
+        totalEl.textContent = '...';
+        latestEl.textContent = '...';
 
         try {
             const since = this.getDateOffset(-30);
@@ -920,17 +963,19 @@ window.OperativoModule = {
             if (error) throw error;
             if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
             if (!reports || !reports.length) {
-                reportsEl.textContent = '0';
-                totalEl.textContent = '0';
-                latestEl.textContent = '-';
+                this.applyAnalysisSummary({ reports: 0, total: 0, latest: '-' }, panel);
+                this.analysisCache.summary = {
+                    timestamp: Date.now(),
+                    data: { reports: 0, total: 0, latest: '-' }
+                };
                 return;
             }
 
             const reportIds = reports.map(rep => rep.id);
-            const latestDate = reports
-                .map(rep => rep.operational_date)
-                .sort()
-                .pop();
+            const latestDate = reports.reduce((latest, rep) => {
+                if (!latest || rep.operational_date > latest) return rep.operational_date;
+                return latest;
+            }, '');
 
             const { data: details, error: detailsError } = await window.sb
                 .from('consumption_details')
@@ -941,9 +986,16 @@ window.OperativoModule = {
             if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
             const total = (details || []).reduce((sum, item) => sum + (item.quantity || 0), 0);
 
-            reportsEl.textContent = reports.length;
-            totalEl.textContent = Math.round(total);
-            latestEl.textContent = latestDate || '-';
+            const summaryData = {
+                reports: reports.length,
+                total: Math.round(total),
+                latest: latestDate || '-'
+            };
+            this.applyAnalysisSummary(summaryData, panel);
+            this.analysisCache.summary = {
+                timestamp: Date.now(),
+                data: summaryData
+            };
         } catch (err) {
             console.error('Error loading analysis summary:', err);
             reportsEl.textContent = '-';
@@ -959,6 +1011,14 @@ window.OperativoModule = {
         if (!chart || !tbody) return;
         if (!window.sb) return;
         if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
+
+        const monthKey = this.getMonthKey(new Date());
+        const cached = this.analysisCache.history;
+        if (cached && cached.monthKey === monthKey && (Date.now() - cached.timestamp) < 120000) {
+            if (monthLabel) monthLabel.textContent = cached.label;
+            this.renderHistorySummary(chart, tbody, cached.items);
+            return;
+        }
 
         chart.innerHTML = '<p class="op-muted">Cargando diagrama...</p>';
         tbody.innerHTML = '';
@@ -985,7 +1045,7 @@ window.OperativoModule = {
             const reportIds = reports.map(rep => rep.id);
             const { data: details, error: detailsError } = await window.sb
                 .from('consumption_details')
-                .select('quantity, sku:inventory_skus(name)')
+                .select('sku_id, quantity')
                 .in('report_id', reportIds);
 
             if (detailsError) throw detailsError;
@@ -997,57 +1057,96 @@ window.OperativoModule = {
 
             const totals = {};
             details.forEach(item => {
-                const name = item.sku?.name || 'Producto';
-                totals[name] = (totals[name] || 0) + (item.quantity || 0);
+                const skuId = item.sku_id || 'unknown';
+                totals[skuId] = (totals[skuId] || 0) + (item.quantity || 0);
             });
 
             const ranked = Object.entries(totals)
-                .map(([name, qty]) => ({ name, qty }))
+                .map(([skuId, qty]) => ({ skuId, qty }))
                 .sort((a, b) => b.qty - a.qty);
 
             const topItems = ranked.slice(0, 10);
             const maxValue = topItems[0]?.qty || 1;
 
-            chart.textContent = '';
-            const chartFragment = document.createDocumentFragment();
-            topItems.forEach(item => {
-                const row = document.createElement('div');
-                row.className = 'op-bar-row';
+            const skuIds = topItems.map(item => item.skuId).filter(id => id !== 'unknown');
+            const skuMap = new Map();
+            if (skuIds.length) {
+                const { data: skus, error: skuError } = await window.sb
+                    .from('inventory_skus')
+                    .select('id, name')
+                    .in('id', skuIds);
+                if (skuError) throw skuError;
+                (skus || []).forEach(sku => skuMap.set(sku.id, sku.name));
+            }
 
-                const label = document.createElement('span');
-                label.textContent = item.name;
-                row.appendChild(label);
+            const itemsWithNames = topItems.map(item => ({
+                name: skuMap.get(item.skuId) || 'Producto',
+                qty: item.qty
+            }));
 
-                const track = document.createElement('div');
-                track.className = 'op-bar-track';
-                const fill = document.createElement('div');
-                fill.className = 'op-bar-fill';
-                fill.style.width = `${Math.round((item.qty / maxValue) * 100)}%`;
-                track.appendChild(fill);
-                row.appendChild(track);
-
-                const value = document.createElement('span');
-                value.textContent = Math.round(item.qty);
-                row.appendChild(value);
-
-                chartFragment.appendChild(row);
-            });
-            chart.appendChild(chartFragment);
-
-            const tableFragment = document.createDocumentFragment();
-            topItems.forEach(item => {
-                const row = document.createElement('tr');
-                row.appendChild(this.buildTextCell(item.name));
-                row.appendChild(this.buildTextCell(Math.round(item.qty)));
-                row.appendChild(this.buildTextCell('En desarrollo'));
-                row.appendChild(this.buildTextCell('En desarrollo'));
-                tableFragment.appendChild(row);
-            });
-            tbody.appendChild(tableFragment);
+            this.renderHistorySummary(chart, tbody, itemsWithNames, maxValue);
+            this.analysisCache.history = {
+                timestamp: Date.now(),
+                monthKey,
+                label: this.getMonthLabel(new Date()),
+                items: itemsWithNames
+            };
         } catch (err) {
             console.error('Error loading history summary:', err);
             chart.innerHTML = '<p class="op-muted">No se pudo cargar el histórico.</p>';
         }
+    },
+
+    applyAnalysisSummary: function(data, panel) {
+        const reportsEl = panel.querySelector('[data-summary="reports"]');
+        const totalEl = panel.querySelector('[data-summary="total"]');
+        const latestEl = panel.querySelector('[data-summary="latest"]');
+        if (!reportsEl || !totalEl || !latestEl) return;
+        reportsEl.textContent = data.reports;
+        totalEl.textContent = data.total;
+        latestEl.textContent = data.latest;
+    },
+
+    renderHistorySummary: function(chart, tbody, items, maxValueOverride) {
+        if (!chart || !tbody) return;
+        const maxValue = maxValueOverride || (items[0]?.qty || 1);
+
+        chart.textContent = '';
+        const chartFragment = document.createDocumentFragment();
+        items.forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'op-bar-row';
+
+            const label = document.createElement('span');
+            label.textContent = item.name;
+            row.appendChild(label);
+
+            const track = document.createElement('div');
+            track.className = 'op-bar-track';
+            const fill = document.createElement('div');
+            fill.className = 'op-bar-fill';
+            fill.style.width = `${Math.round((item.qty / maxValue) * 100)}%`;
+            track.appendChild(fill);
+            row.appendChild(track);
+
+            const value = document.createElement('span');
+            value.textContent = Math.round(item.qty);
+            row.appendChild(value);
+
+            chartFragment.appendChild(row);
+        });
+        chart.appendChild(chartFragment);
+
+        const tableFragment = document.createDocumentFragment();
+        items.forEach(item => {
+            const row = document.createElement('tr');
+            row.appendChild(this.buildTextCell(item.name));
+            row.appendChild(this.buildTextCell(Math.round(item.qty)));
+            row.appendChild(this.buildTextCell('En desarrollo'));
+            row.appendChild(this.buildTextCell('En desarrollo'));
+            tableFragment.appendChild(row);
+        });
+        tbody.appendChild(tableFragment);
     },
 
     buildMetaItem: function(label, value) {
@@ -1096,6 +1195,11 @@ window.OperativoModule = {
 
     getMonthLabel: function(date) {
         return date.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+    },
+
+    getMonthKey: function(date) {
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        return `${date.getFullYear()}-${month}`;
     },
 
     // --- Convocation Logic (Reused) ---
