@@ -20,6 +20,23 @@
             max-width: 1200px; /* Widened for Desktop */
             margin: 0 auto;
         }
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+        .content-header h2 {
+            font-size: 32px;
+            letter-spacing: -0.02em;
+            margin: 0;
+        }
+        .content-header p {
+            margin: 6px 0 0;
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+        }
         /* Hide Layout Containers */
         #sidebar-container, #header-container { display: none; }
         
@@ -32,6 +49,7 @@
             margin-bottom: 20px;
         }
         .text-muted { color: rgba(255,255,255,0.6) !important; }
+        .text-danger { color: #FF3B30 !important; }
         h2, h3 { color: white; margin-top: 0; }
         
         /* Back Button */
@@ -44,7 +62,7 @@
         .back-btn:hover { background: rgba(255,255,255,0.2); }
 
         /* Tables */
-        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 10px; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 10px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden; }
         th { 
             text-align: left; 
             color: white; /* Better visibility */
@@ -52,11 +70,14 @@
             font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
             border-bottom: 2px solid rgba(255,255,255,0.15); 
             padding: 12px 8px; 
-            background: rgba(0,0,0,0.2); /* Slight bg for header */
+            background: rgba(0,0,0,0.4); /* Slight bg for header */
             position: sticky; top: 0; z-index: 10;
         }
         td { padding: 14px 8px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 15px; vertical-align: middle; }
         .cell-center { text-align: center; }
+        tbody tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+        tbody tr.is-low td { background: rgba(255, 59, 48, 0.06); }
+        tbody tr.is-selected td { background: rgba(255, 59, 48, 0.14); }
         
         /* Tabs */
         .tab-btn {
@@ -124,7 +145,8 @@
 
         /* Badges */
         .status-pill {
-            display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px;
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 4px 10px; border-radius: 12px; font-size: 11px;
             font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
         }
         .status-low { background: rgba(255, 59, 48, 0.2); color: #FF3B30; border: 1px solid rgba(255, 59, 48, 0.3); }
@@ -133,7 +155,7 @@
 
         /* Utilities */
         .hidden { display: none !important; }
-        .table-scroll { overflow-x: auto; margin: 10px 0; max-height: 400px; overflow-y: auto; }
+        .table-scroll { overflow-x: auto; margin: 10px 0; max-height: 520px; overflow-y: auto; }
         .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
         .form-actions.split { justify-content: space-between; }
         .form-field { margin-bottom: 16px; }
@@ -141,6 +163,82 @@
         input[type="number"] { width: 80px; text-align: center; }
         .table-input { width: 70px; padding: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 6px; text-align: center; }
         .table-input-full { width: 100%; padding: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 6px; }
+        .checkbox-lg { width: 18px; height: 18px; accent-color: #FF3B30; }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin: 16px 0 8px;
+        }
+        .summary-card {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px;
+            padding: 14px 16px;
+        }
+        .summary-label {
+            margin: 0;
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.6);
+        }
+        .summary-value {
+            margin: 6px 0 2px;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .summary-sub {
+            margin: 0;
+            font-size: 12px;
+            color: rgba(255,255,255,0.55);
+        }
+
+        .modal-summary {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .modal-summary p {
+            margin: 0;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.6);
+        }
+        .modal-summary strong {
+            display: block;
+            margin-top: 6px;
+            font-size: 20px;
+            color: white;
+            letter-spacing: -0.01em;
+        }
+
+        .request-list { display: flex; flex-direction: column; gap: 12px; }
+        .request-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+        }
+        .request-meta { display: flex; flex-direction: column; gap: 6px; }
+        .request-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+        @media (max-width: 720px) {
+            .content-header { flex-direction: column; align-items: flex-start; }
+            .content-header h2 { font-size: 26px; }
+            .modal-card { width: 94%; height: 88vh; }
+        }
 
     </style>
 </head>
@@ -152,7 +250,10 @@
         <!-- Main Content -->
         <div id="page-content">
             <div class="content-header">
-                <h2>Stock Operativo</h2>
+                <div>
+                    <h2>Stock Operativo</h2>
+                    <p>Control de faltantes y solicitudes para fechas operativas.</p>
+                </div>
             </div>
 
             <div id="content-operativo-stock">
@@ -170,6 +271,23 @@
                         </div>
                         <div class="card-actions" style="margin-top:10px;">
                             <button class="btn-success" id="btn-open-request">Solicitar faltantes</button>
+                        </div>
+                    </div>
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <p class="summary-label">Items activos</p>
+                            <p class="summary-value" id="op-summary-total">-</p>
+                            <p class="summary-sub">Con sugerencia: <span id="op-summary-low">-</span></p>
+                        </div>
+                        <div class="summary-card">
+                            <p class="summary-label">Packs sugeridos</p>
+                            <p class="summary-value" id="op-summary-suggested">-</p>
+                            <p class="summary-sub">Seleccionados: <span id="op-summary-selected">-</span></p>
+                        </div>
+                        <div class="summary-card">
+                            <p class="summary-label">Packs seleccionados</p>
+                            <p class="summary-value" id="op-summary-selected-packs">-</p>
+                            <p class="summary-sub">Listos para solicitar</p>
                         </div>
                     </div>
                     <div id="op-stock-list">Cargando...</div>
@@ -202,6 +320,17 @@
                         <select id="request-op-date-select">
                             <option value="">Seleccione una fecha...</option>
                         </select>
+                    </div>
+
+                    <div class="modal-summary">
+                        <div>
+                            <p>Items seleccionados</p>
+                            <strong id="request-summary-items">0</strong>
+                        </div>
+                        <div>
+                            <p>Packs totales</p>
+                            <strong id="request-summary-packs">0</strong>
+                        </div>
                     </div>
                     
                     <div class="table-scroll">
