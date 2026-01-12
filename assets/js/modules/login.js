@@ -156,18 +156,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
           // Attempt Redirect
           console.log('Login: Attempting redirect for role:', profile.role);
+          let redirected = false;
+
           if (window.AuthModule && typeof window.AuthModule.handleRoleRedirect === 'function') {
-              const redirected = window.AuthModule.handleRoleRedirect(profile);
-              if (redirected) {
-                  return; // Success, navigation happens
-              } else {
-                  console.warn(`Login: AuthModule found no route for role '${profile.role}'`);
-              }
+              redirected = window.AuthModule.handleRoleRedirect(profile);
           }
 
-          // Fallback if no redirect happened (Configuration Error)
-          await window.sb.auth.signOut();
-          throw new Error('Tu rol no tiene acceso configurado.');
+          if (!redirected) {
+              // Fallback / Hardcoded Routes
+              const role = (profile.role || '').toLowerCase();
+              if (role === 'operativo') {
+                  window.location.href = 'pages/operativo/operativo-index.html';
+                  return;
+              }
+              if (role === 'gerencia') {
+                  window.location.href = 'pages/gerencia/gerencia-index.html';
+                  return;
+              }
+              if (role === 'admin') {
+                  window.location.href = 'index.html';
+                  return;
+              }
+
+              // Only if still not redirected
+              await window.sb.auth.signOut();
+              throw new Error('Tu rol no tiene acceso configurado.');
+          }
 
       } catch (err) {
           console.error("Login Error:", err);
