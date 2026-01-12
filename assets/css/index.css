@@ -464,3 +464,16 @@ body{
   .full-view{ padding:26px 20px 90px; }
   .full-view-inner{ max-width:1200px; }
 }
+
+/* Chip Date (Shared Style) */
+.chip-date {
+  background: #000;
+  color: #fff;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-weight: 500;
+  text-align: center;
+  display: inline-block;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}

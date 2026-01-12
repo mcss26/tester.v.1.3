@@ -137,7 +137,7 @@ window.AdminPlanModule = {
                     ${events.map(e => `
                         <tr class="${isActive ? 'cursor-pointer hover-row' : ''}" 
                             onclick="${isActive ? `AdminPlanModule.toggleEventDetails('${e.id}', this)` : ''}">
-                            <td>${e.date}</td>
+                            <td><span class="chip-date">${e.date}</span></td>
                             <td>${e.name || '-'}</td>
                             <td><span class="badge">${e.status}</span></td>
                         </tr>

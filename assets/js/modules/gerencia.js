@@ -123,7 +123,7 @@ window.GerenciaModule = {
             
             // Columns
             tr.innerHTML = `
-                <td>${dateStr.toUpperCase()}</td>
+                <td><span class="chip-date">${dateStr.toUpperCase()}</span></td>
                 <td>${e.name || 'Sin nombre'}</td>
                 <td><span class="status-badge ${statusClass}">${e.status.toUpperCase()}</span></td>
                 ${type === 'active' ? `<td><button class="btn-icon" style="opacity:0.7">Ver</button></td>` : ''}
