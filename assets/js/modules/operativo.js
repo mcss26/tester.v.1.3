@@ -1049,7 +1049,7 @@ window.OperativoModule = {
         const areaId = this.profile.area_id;
 
         if (!areaId) {
-            listContainer.innerHTML = '<p>Error: Tu usuario no tiene área asignada.</p>';
+            this.setDashboardEmpty('Error: Tu usuario no tiene área asignada.');
             return;
         }
 
@@ -1063,7 +1063,7 @@ window.OperativoModule = {
 
         if (!this.isDashboardRequestActive(requestId, 'convocation')) return;
         if (!staffUsers || staffUsers.length === 0) {
-             listContainer.innerHTML = '<p>No hay personal disponible en tu área.</p>';
+            this.setDashboardEmpty('No hay personal disponible en tu área.');
         }
 
         // Calculate Requirements in parallel
@@ -1137,24 +1137,44 @@ window.OperativoModule = {
             
             const row = document.createElement('div');
             row.className = 'staff-row';
+            const displayName = person.full_name || person.email || 'Sin nombre';
 
-            let actionHtml = '';
+            const info = document.createElement('div');
+            info.className = 'staff-info';
+            const name = document.createElement('span');
+            name.className = 'staff-name';
+            name.textContent = displayName;
+            const role = document.createElement('span');
+            role.className = 'staff-role';
+            role.textContent = 'Staff';
+            info.appendChild(name);
+            info.appendChild(role);
+
+            const actions = document.createElement('div');
+            actions.className = 'staff-actions';
+
             if (!status) {
-                actionHtml = `<button class="btn-convocate-small" onclick="OperativoModule.convocate('${person.id}', this)">Convocar</button>`;
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'btn-convocate-small';
+                button.textContent = 'Convocar';
+                button.addEventListener('click', () => this.convocate(person.id, button));
+                actions.appendChild(button);
             } else {
-                const label = status === 'pending' ? 'Enviado' : (status === 'accepted' ? 'Confirmado' : 'Rechazado');
-                const color = status === 'accepted' ? '#30D158' : (status === 'rejected' ? '#FF453A' : '#FF9F0A');
-                actionHtml = `<span style="font-size:12px; color:${color}; font-weight:500;">${label}</span>`;
+                const statusMap = {
+                    pending: { label: 'Enviado', className: 'staff-status-pending' },
+                    accepted: { label: 'Confirmado', className: 'staff-status-accepted' },
+                    rejected: { label: 'Rechazado', className: 'staff-status-rejected' }
+                };
+                const statusConfig = statusMap[status] || statusMap.pending;
+                const statusEl = document.createElement('span');
+                statusEl.className = `staff-status ${statusConfig.className}`;
+                statusEl.textContent = statusConfig.label;
+                actions.appendChild(statusEl);
             }
 
-            const displayName = person.full_name || person.email || 'Sin nombre';
-            row.innerHTML = `
-                <div class="staff-info">
-                    <span class="staff-name">${displayName}</span>
-                    <span class="staff-role">Staff</span>
-                </div>
-                <div>${actionHtml}</div>
-            `;
+            row.appendChild(info);
+            row.appendChild(actions);
             listContainer.appendChild(row);
         });
     },
@@ -1181,7 +1201,12 @@ window.OperativoModule = {
             btnElement.disabled = false;
         } else {
             const parent = btnElement.parentElement;
-            parent.innerHTML = `<span style="font-size:12px; color:#FF9F0A; font-weight:500;">Enviado</span>`;
+            if (!parent) return;
+            parent.textContent = '';
+            const status = document.createElement('span');
+            status.className = 'staff-status staff-status-pending';
+            status.textContent = 'Enviado';
+            parent.appendChild(status);
         }
     }
 };

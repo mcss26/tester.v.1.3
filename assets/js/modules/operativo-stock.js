@@ -8,15 +8,6 @@ window.OperationalStockModule = {
     init: function() {
         console.log('OperationalStockModule initialized');
         this.sb = window.sb;
-        // Expose functions required by inline HTML events
-        window.showOpStockTab = this.showOpStockTab.bind(this);
-        window.toggleRequestItem = this.toggleRequestItem.bind(this);
-        window.openRequestModal = this.openRequestModal.bind(this);
-        window.updateRequestPack = this.updateRequestPack.bind(this);
-        window.updateRequestJustification = this.updateRequestJustification.bind(this);
-        window.submitReplenishmentRequest = this.submitReplenishmentRequest.bind(this);
-        // Expose load function for navigation
-        window.loadOpStockList = this.loadOpStockList.bind(this);
 
         const tabActual = document.getElementById('tab-btn-op-stock-actual');
         if (tabActual) {
@@ -682,3 +673,11 @@ window.OperationalStockModule = {
     }
 
 };
+
+document.addEventListener('DOMContentLoaded', async () => {
+    if (window.AuthModule) await window.AuthModule.init();
+    if (window.OperationalStockModule) {
+        window.OperationalStockModule.init();
+        window.OperationalStockModule.loadOpStockList();
+    }
+});
