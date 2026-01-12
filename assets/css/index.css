@@ -724,17 +724,25 @@ body{
     cursor: pointer;
 }
 /* Mode Switcher (ERP/CRM) */
+.mode-section{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  margin-top:-8px;
+}
+
 .mode-switch-container {
   display: flex;
   gap: 8px;
   justify-content: center;
-  margin-bottom: 24px; /* Space before welcome label */
 }
 
 .mode-chip {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.6);
+  background: #000000;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #ffffff;
   padding: 6px 14px;
   border-radius: 999px;
   font-size: 11px;
@@ -742,17 +750,25 @@ body{
   letter-spacing: 0.05em;
   cursor: pointer;
   transition: all 0.2s ease;
-  backdrop-filter: blur(10px);
 }
 
 .mode-chip:hover {
-  background: rgba(255,255,255,0.15);
-  color: white;
+  background: #0b0b0b;
+  border-color: rgba(255,255,255,0.35);
 }
 
 .mode-chip.active {
-  background: var(--accent, #FF3B30);
+  background: #000000;
   color: white;
-  border-color: transparent;
-  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
+  border-color: rgba(255, 59, 48, 0.7);
+  box-shadow: 0 0 0 1px rgba(255, 59, 48, 0.25);
+}
+
+.event-date{
+  margin:0;
+  font-size:12px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.55);
+  text-align:center;
 }

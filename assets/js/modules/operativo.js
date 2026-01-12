@@ -11,7 +11,6 @@ window.OperativoModule = {
     stockFilter: 'active',
     analysisTab: 'importar',
     dashboardMode: null,
-    dashboardMode: null,
     dashboardRequestId: 0,
     activeMode: 'erp',
 
@@ -215,6 +214,7 @@ window.OperativoModule = {
 
         // Show Action Container based on Mode
         this.refreshActionVisibility();
+        this.updateEventDateLabel();
         
         // Hide dashboard if open
         document.getElementById('staff-dashboard').classList.add('hidden');
@@ -230,9 +230,26 @@ window.OperativoModule = {
 
         // Update Visibility
         this.refreshActionVisibility();
+        this.updateEventDateLabel();
         
         // Optional: Close dashboard on mode switch?
         document.getElementById('staff-dashboard').classList.add('hidden');
+    },
+
+    updateEventDateLabel: function() {
+        const label = document.getElementById('event-date-label');
+        if (!label) return;
+
+        if (this.activeMode !== 'erp') {
+            label.classList.add('hidden');
+            return;
+        }
+
+        const dateText = this.activeEvent
+            ? new Date(this.activeEvent.date).toLocaleDateString('es-AR', { day: 'numeric', month: 'long' })
+            : '-';
+        label.textContent = `Evento: ${dateText}`;
+        label.classList.remove('hidden');
     },
 
     refreshActionVisibility: function() {

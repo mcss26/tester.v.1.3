@@ -17,11 +17,15 @@
 </head>
 <body class="welcome-screen">
   <main class="center-content">
-    <section class="welcome-section">
+    <section class="mode-section">
       <div class="mode-switch-container">
-          <button class="mode-chip active" data-mode="erp">ERP</button>
-          <button class="mode-chip" data-mode="crm">CRM</button>
+        <button class="mode-chip active" data-mode="erp" type="button">ERP</button>
+        <button class="mode-chip" data-mode="crm" type="button">CRM</button>
       </div>
+      <p id="event-date-label" class="event-date">Evento: -</p>
+    </section>
+
+    <section class="welcome-section">
       <p class="label-welcome">BIENVENIDO</p>
       <h1 id="user-name" class="title-name">...</h1>
       <p class="role-subtitle">Agente de operación y producción de <strong>MIDNIGHT CLUB</strong></p>
