@@ -76,13 +76,13 @@ window.OperativoModule = {
     bindUI_CRM: function() {
         // CRM Actions
         document.getElementById('btn-crm-requests')?.addEventListener('click', () => {
-             this.openDashboard('requests'); // CRM Request View (might be same as ERP for now)
+             this.openDashboard('requests'); 
         });
         document.getElementById('btn-crm-access')?.addEventListener('click', () => {
-             alert('Módulo de Accesos: Próximamente');
+             this.openDashboard('access');
         });
         document.getElementById('btn-crm-birthday')?.addEventListener('click', () => {
-             alert('Módulo de Cumpleaños: Próximamente');
+             this.openDashboard('birthday');
         });
         
         this.bindCommonUI();
@@ -200,10 +200,12 @@ window.OperativoModule = {
     },
 
     openDashboard: async function(mode) {
-        if (mode === 'convocation' && !this.activeEvent) return;
-        if (mode !== 'convocation' && !this.activeEvent) {
-            this.setDashboardEmpty('Selecciona una fecha para continuar.');
-            return;
+        // Guard clauses
+        const eventRequiredModes = ['convocation', 'analysis', 'stock']; // Modes that absolutely need an event
+        
+        if (eventRequiredModes.includes(mode) && !this.activeEvent) {
+             this.setDashboardEmpty('Selecciona una fecha para continuar.');
+             return;
         }
 
         this.dashboardMode = mode;
@@ -236,6 +238,19 @@ window.OperativoModule = {
 
         if (mode === 'analysis') {
             await this.loadAnalysisOverview(requestId);
+            return;
+        }
+
+        if (mode === 'access') {
+            this.setDashboardTitle('Control de Accesos');
+            this.setDashboardEmpty('Módulo en desarrollo: Gestión de accesos y listas.');
+            return;
+        }
+
+        if (mode === 'birthday') {
+            this.setDashboardTitle('Agenda de Cumpleaños');
+            this.setDashboardEmpty('Módulo en desarrollo: Próximos cumpleaños de clientes.');
+            return;
         }
     },
 
