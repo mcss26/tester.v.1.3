@@ -2,7 +2,13 @@
 
 window.AuthModule = {
     init: async function() {
-        console.log('AuthModule initialized');
+        if (window.AuthModuleInitialized) {
+            console.log('AuthModule already initialized. Skipping.');
+            return;
+        }
+        window.AuthModuleInitialized = true;
+        console.log('AuthModule initializing...');
+        
         const sb = window.sb;
         if (!sb) {
             console.error('Supabase not initialized');
@@ -11,37 +17,37 @@ window.AuthModule = {
 
         const { data: { session }, error } = await sb.auth.getSession();
 
+        // If on login page, DO NOT redirect unless we have a valid session to forward.
+        const path = window.location.pathname;
+        const isLogin = path.includes('login.html');
+
         if (!session) {
-            if (!window.location.pathname.includes('login.html')) {
+            if (!isLogin) {
                 this.redirectToLogin();
             }
+            return; // Stay on login or where we are (if public)
+        }
+
+        // We have a session
+        const { data: profile, error: profileError } = await sb.from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+        if (profileError || !profile || profile.is_active === false) {
+            await sb.auth.signOut();
+            if (!isLogin) this.redirectToLogin();
+            return;
+        }
+
+        // Store global user info
+        window.currentUser = { ...session.user, profile };
+
+        // If we are on login page with a valid session, force redirect out.
+        // Otherwise, guard the current route.
+        if (isLogin) {
+            this.handleRoleRedirect(profile); 
         } else {
-            // Fetch Profile
-            const { data: profile, error: profileError } = await sb.from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
-
-            if (profileError || !profile) {
-                await sb.auth.signOut();
-                this.redirectToLogin();
-                return;
-            }
-
-            if (profile && profile.is_active === false) {
-                await sb.auth.signOut();
-                this.redirectToLogin();
-                return;
-            }
-
-            // Store global user info
-            window.currentUser = {
-                ...session.user,
-                profile
-            };
-
-            // Redirect Logic (Logic only, no DOM)
-            this.handleRoleRedirect(profile);
             this.guardRoute(profile);
         }
     },

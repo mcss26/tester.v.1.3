@@ -75,10 +75,8 @@ document.addEventListener("DOMContentLoaded", () => {
               throw new Error('Cuenta desactivada. Contacta administración.');
           }
 
-          window.currentUser = {
-              ...data.user,
-              profile
-          };
+          // Manually set cache to avoid re-fetch in AuthModule if it runs
+          window.currentUser = { ...data.user, profile };
 
           // Attempt Redirect
           console.log('Login: Attempting redirect for role:', profile.role);
