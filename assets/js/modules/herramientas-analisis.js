@@ -271,6 +271,13 @@ function renderNoMatches({ detectedKeys, importCount, sampleSkus, sampleExcel, f
         : 'No se detectó cabecera clara. Se asumió: Columna 1 = Producto, Columna 2 = Cantidad.'
     container.appendChild(warning)
 
+    const summary = document.createElement('div')
+    summary.className = 'analysis-summary'
+    summary.appendChild(buildAnalysisStat('Procesados', importCount))
+    summary.appendChild(buildAnalysisStat('Coincidencias', 0, 'danger'))
+    summary.appendChild(buildAnalysisStat('Cabecera', foundHeader ? 'Detectada' : 'Forzada'))
+    container.appendChild(summary)
+
     const keys = document.createElement('p')
     keys.textContent = `Columnas detectadas: ${detectedKeys}`
     container.appendChild(keys)
@@ -296,19 +303,9 @@ function renderImportPreview(matched, unmatched, foundHeader) {
     const summary = document.createElement('div')
     summary.className = 'analysis-summary'
 
-    const summaryTitle = document.createElement('p')
-    summaryTitle.textContent = 'Resultados del mapeo'
-    summary.appendChild(summaryTitle)
-
-    const matchedText = document.createElement('p')
-    matchedText.className = 'text-muted'
-    matchedText.textContent = `Encontrados: ${matched}`
-    summary.appendChild(matchedText)
-
-    const unmatchedText = document.createElement('p')
-    unmatchedText.className = unmatched > 0 ? 'text-danger' : 'text-muted'
-    unmatchedText.textContent = `No encontrados: ${unmatched}`
-    summary.appendChild(unmatchedText)
+    summary.appendChild(buildAnalysisStat('Total importado', importData.length))
+    summary.appendChild(buildAnalysisStat('Encontrados', matched, matched > 0 ? 'success' : 'danger'))
+    summary.appendChild(buildAnalysisStat('No encontrados', unmatched, unmatched > 0 ? 'danger' : 'success'))
 
     container.appendChild(summary)
 
@@ -364,6 +361,24 @@ function buildCell(value) {
     const text = value === null || value === undefined || value === '' ? '-' : String(value)
     cell.textContent = text
     return cell
+}
+
+function buildAnalysisStat(label, value, tone) {
+    const stat = document.createElement('div')
+    stat.className = 'analysis-stat'
+    if (tone) stat.classList.add(`is-${tone}`)
+
+    const labelEl = document.createElement('p')
+    labelEl.className = 'analysis-stat-label'
+    labelEl.textContent = label
+    stat.appendChild(labelEl)
+
+    const valueEl = document.createElement('p')
+    valueEl.className = 'analysis-stat-value'
+    valueEl.textContent = value
+    stat.appendChild(valueEl)
+
+    return stat
 }
 
 function buildInfoItem(label, value) {
@@ -510,16 +525,17 @@ window.analyzeIdealStock = async function() {
     const summary = document.createElement('div')
     summary.className = 'analysis-summary'
 
-    const summaryText = document.createElement('p')
-    summaryText.textContent = `Basado en ${daysCount} días reportados.`
-    summary.appendChild(summaryText)
-
+    summary.appendChild(buildAnalysisStat('Días analizados', daysCount))
+    summary.appendChild(buildAnalysisStat('Productos', Object.keys(skuMap).length))
     const bulkBtn = document.createElement('button')
     bulkBtn.type = 'button'
     bulkBtn.className = 'btn-success'
     bulkBtn.textContent = 'Fijar todos los ideales'
     bulkBtn.addEventListener('click', window.updateAllStockIdeal)
-    summary.appendChild(bulkBtn)
+    const actionWrap = document.createElement('div')
+    actionWrap.className = 'analysis-summary-actions'
+    actionWrap.appendChild(bulkBtn)
+    summary.appendChild(actionWrap)
     container.appendChild(summary)
 
     const table = document.createElement('table')
@@ -563,7 +579,10 @@ window.analyzeIdealStock = async function() {
     }
 
     table.appendChild(tbody)
-    container.appendChild(table)
+    const tableWrap = document.createElement('div')
+    tableWrap.className = 'analysis-preview'
+    tableWrap.appendChild(table)
+    container.appendChild(tableWrap)
 }
 
 window.updateAllStockIdeal = async function() {
