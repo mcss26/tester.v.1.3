@@ -145,12 +145,26 @@
                         padding: 20px;
                         min-height: 100vh;
                         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+                        display: block;
+                        overflow-y: auto;
                     }
 
                     .operativo-mode .app-container { 
-                        grid-template-columns: 1fr; 
-                        max-width: 900px;
+                        display: block;
+                        width: 100%;
+                        max-width: 1000px;
                         margin: 0 auto;
+                    }
+
+                    .operativo-mode main {
+                        display: block;
+                        width: 100%;
+                    }
+
+                    .operativo-mode #page-content {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 16px;
                     }
                     
                     .operativo-mode #sidebar-container, 
@@ -177,6 +191,38 @@
                     }
                     .operativo-mode .text-muted { 
                         color: rgba(255, 255, 255, 0.5) !important; font-size: 14px; 
+                    }
+
+                    .operativo-mode .content-header h2 {
+                        margin: 0;
+                        font-size: 28px;
+                        letter-spacing: -0.01em;
+                    }
+
+                    .operativo-mode .analysis-section {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 16px;
+                    }
+
+                    .operativo-mode .analysis-panel {
+                        background: rgba(0, 0, 0, 0.25);
+                        border: 1px solid rgba(255, 255, 255, 0.08);
+                        border-radius: 16px;
+                        padding: 18px;
+                    }
+
+                    .operativo-mode .analysis-preview {
+                        max-height: 60vh;
+                        overflow: auto;
+                        border-radius: 14px;
+                        border: 1px solid rgba(255, 255, 255, 0.08);
+                        background: rgba(0,0,0,0.3);
+                    }
+
+                    .operativo-mode table {
+                        width: 100%;
+                        border-collapse: collapse;
                     }
 
                     /* Tabs */
