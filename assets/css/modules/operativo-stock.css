@@ -2,6 +2,7 @@
 body.operativo-stock {
     background: radial-gradient(circle at 50% 30%, #5e0a0a 0%, #1a0000 60%, #000000 100%);
     color: #ffffff;
+    display: block;
     min-height: 100vh;
     padding: 20px;
 }
