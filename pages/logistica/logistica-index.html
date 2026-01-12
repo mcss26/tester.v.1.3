@@ -1,0 +1,74 @@
+<!-- logistica.html -->
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#4a0000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Logística - MIDNIGHT CLUB</title>
+
+  <link rel="stylesheet" href="/assets/css/index.css" />
+
+  <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script defer src="../../assets/js/core/config.js"></script>
+  <script defer src="../../assets/js/modules/logistica.js"></script>
+</head>
+<body class="welcome-screen">
+  <main class="center-content">
+    <section class="welcome-section">
+      <p class="label-welcome">BIENVENIDO</p>
+      <h1 id="user-name" class="title-name">...</h1>
+      <p class="role-subtitle">Encargado de logística de <strong>MIDNIGHT CLUB</strong></p>
+    </section>
+
+    <section class="dates-section fade-in-delayed">
+      <div id="date-chips" class="chips-row">
+        <div class="skeleton-chip"></div>
+        <div class="skeleton-chip"></div>
+        <div class="skeleton-chip"></div>
+      </div>
+    </section>
+
+    <section id="action-container" class="action-section hidden">
+      <div class="actions-grid">
+        <button id="btn-ready-to-go" class="action-card glass-button">
+          <span class="action-label">Ready-to-go</span>
+        </button>
+
+        <button id="btn-nomina" class="action-card glass-button">
+          <span class="action-label">Nómina</span>
+        </button>
+
+        <button id="btn-replenishment" class="action-card glass-button">
+          <span class="action-label">Reposiciones</span>
+        </button>
+
+        <button id="btn-arrivals" class="action-card glass-button">
+          <span class="action-label">Arribos</span>
+        </button>
+      </div>
+    </section>
+
+    <section id="staff-dashboard" class="staff-dashboard hidden">
+      <header class="dashboard-header">
+        <div>
+          <h2 id="dashboard-title">Panel</h2>
+          <p id="allocation-subtitle" style="margin:4px 0 0 0; font-size:13px; color:rgba(255,255,255,0.5); display:none;">
+            Requeridos: <span id="required-count">...</span>
+          </p>
+        </div>
+        <div class="header-actions">
+          <button id="btn-close-dashboard" class="btn-icon" aria-label="Cerrar">×</button>
+        </div>
+      </header>
+      <div id="content-list" class="staff-list"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <button id="btn-logout" class="footer-link">Cerrar Sesión</button>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!-- gerencia.html -->
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#4a0000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Gerencia - MIDNIGHT CLUB</title>
+
+  <link rel="stylesheet" href="/assets/css/index.css" />
+
+  <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script defer src="../../assets/js/core/config.js"></script>
+  <script defer src="../../assets/js/modules/gerencia.js"></script>
+</head>
+<body class="welcome-screen">
+  <main class="center-content">
+    <div id="dashboard-view">
+      <section class="welcome-section">
+        <p class="label-welcome">BIENVENIDO</p>
+        <h1 id="user-name" class="title-name">...</h1>
+        <p class="role-subtitle">Gerencia de <strong>MIDNIGHT CLUB</strong></p>
+      </section>
+
+      <section class="fade-in-delayed" style="width:100%;">
+        <div class="primary-actions">
+          <button id="btn-balance-weekly" class="primary-card">
+            <span class="primary-label">Balance Semanal</span>
+            <span class="primary-sub">Ver reporte</span>
+          </button>
+
+          <button id="btn-balance-monthly" class="primary-card">
+            <span class="primary-label">Balance Mensual</span>
+            <span class="primary-sub">Ver reporte</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="action-section" style="width:100%;">
+
+        <div class="actions-grid">
+          <button id="btn-events" class="action-card glass-button">
+            <span class="action-label">Eventos</span>
+          </button>
+
+          <button id="btn-select-date" class="action-card glass-button">
+            <span class="action-label">Seleccionar Fechas</span>
+          </button>
+
+          <button id="btn-stock-live" class="action-card glass-button">
+            <span class="action-label">Stock en vivo</span>
+          </button>
+
+          <button id="btn-requests" class="action-card glass-button">
+            <span class="action-label">Solicitudes</span>
+          </button>
+
+          <button id="btn-accounts-payable" class="action-card glass-button">
+            <span class="action-label">Cuentas por pagar</span>
+          </button>
+
+          <button id="btn-master-data" class="action-card glass-button">
+            <span class="action-label">Master Data</span>
+          </button>
+        </div>
+      </section>
+    </div>
+
+
+  </main>
+
+  <footer class="footer">
+    <button id="btn-logout" class="footer-link">Cerrar Sesión</button>
+  </footer>
+</body>
+</html>

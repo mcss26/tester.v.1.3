@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal - Tester v1.1</title>
+    <!-- Libs -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar injected by layout.js -->
+        <nav id="sidebar-container"></nav>
+
+        <!-- Main Content -->
+        <main>
+            <header id="header-container"></header>
+
+            <div id="page-content">
+                <div class="content-header">
+                    <h2>Logistica - Personal</h2>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3>Estado de Convocatorias</h3>
+                            <p class="text-muted">Visualiza confirmaciones por area y fecha.</p>
+                        </div>
+                        <div class="card-actions">
+                            <div class="search-group">
+                                <input type="date" id="personal-date">
+                                <input type="text" id="search-personal-input" placeholder="Buscar nombre o area..." autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel mb-md">
+                        <div class="row-between">
+                            <div>
+                                <span class="badge">Convocatorias activas</span>
+                                <p class="text-muted">Estado general de respuesta del equipo.</p>
+                            </div>
+                            <div class="inline-row">
+                                <span class="pill-muted">Confirmados: 12</span>
+                                <span class="pill-muted">Pendientes: 5</span>
+                                <span class="pill-muted">Rechazados: 2</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="personal-tabs" class="tab-container">
+                        <button type="button" class="tab-btn active" data-area="all">Todos</button>
+                        <button type="button" class="tab-btn" data-area="barra">Barra</button>
+                        <button type="button" class="tab-btn" data-area="caja">Caja</button>
+                        <button type="button" class="tab-btn" data-area="limpieza">Limpieza</button>
+                        <button type="button" class="tab-btn" data-area="seguridad">Seguridad</button>
+                        <button type="button" class="tab-btn" data-area="produccion">Produccion</button>
+                    </div>
+
+                    <div class="table-scroll">
+                        <table class="table-compact">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Area</th>
+                                    <th class="text-center">Confirmado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="personal-table-body"></tbody>
+                        </table>
+                    </div>
+                    <p class="table-note mt-sm">Actualiza la fecha para cambiar la convocatoria activa.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../../assets/js/core/config.js"></script>
+    <script src="../../assets/js/layout.js"></script>
+    <script src="../../assets/js/modules/auth.js"></script>
+    <script src="../../assets/js/modules/logistica-personal.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.AuthModule) await window.AuthModule.init();
+            window.LayoutModule.injectLayout('logistica-personal');
+            if (window.LogisticaPersonalModule) window.LogisticaPersonalModule.init();
+        });
+    </script>
+</body>
+</html>

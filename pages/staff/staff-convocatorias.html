@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff - Tester v1.1</title>
+    <!-- Libs -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar injected by layout.js -->
+        <nav id="sidebar-container"></nav>
+
+        <!-- Main Content -->
+        <main>
+            <header id="header-container"></header>
+
+            <div id="page-content">
+                <div class="content-header">
+                    <h2>Staff - Convocatorias</h2>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3>Mis Convocatorias</h3>
+                            <p class="text-muted">Responde invitaciones pendientes para la fecha.</p>
+                        </div>
+                        <div class="card-actions">
+                            <div class="search-group">
+                                <input type="text" id="search-staff-input" placeholder="Buscar fecha o area..." autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="staff-list" class="request-list">
+                        <p class="text-center text-muted">Cargando invitaciones...</p>
+                    </div>
+
+                    <p class="table-note mt-sm">Acepta o rechaza para actualizar tu estado en logistica.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../../assets/js/core/config.js"></script>
+    <script src="../../assets/js/layout.js"></script>
+    <script src="../../assets/js/modules/auth.js"></script>
+    <script src="../../assets/js/modules/staff-convocatorias.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.AuthModule) await window.AuthModule.init();
+            window.LayoutModule.injectLayout('staff-convocatorias');
+            if (window.StaffConvocatoriasModule) window.StaffConvocatoriasModule.init();
+        });
+    </script>
+</body>
+</html>

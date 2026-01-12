@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gerencia - Balance</title>
+    <!-- Libs -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../assets/css/base.css" />
+    <style>
+      .hidden {
+        display: none !important;
+      }
+      .details-row {
+        background-color: #f9f9f9;
+      }
+      .category-section {
+        margin-bottom: 30px;
+      }
+      .category-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 2px solid #eee;
+        color: #444;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Sidebar injected by layout.js -->
+      <nav id="sidebar-container"></nav>
+
+      <!-- Main Content -->
+      <main>
+        <header id="header-container"></header>
+
+        <div id="page-content">
+          <div class="content-header">
+            <h2>Gerencia - Balance</h2>
+          </div>
+
+          <!-- Date Selection Section -->
+          <div class="card mb-md">
+            <div
+              class="inline-row"
+              style="
+                justify-content: flex-start;
+                gap: 20px;
+                align-items: center;
+              "
+            >
+              <h3 style="margin: 0">Seleccionar Fecha:</h3>
+              <select
+                id="balance-date-select"
+                class="form-control"
+                style="width: 250px"
+              >
+                <option value="">-- Seleccione una fecha --</option>
+                <!-- Date options will be injected here -->
+              </select>
+            </div>
+          </div>
+
+          <!-- Main Tabs Container (Hidden until date selected) -->
+          <div id="main-balance-container" class="hidden">
+            <div class="tab-container">
+              <button class="tab-btn active" data-tab="ingresos">
+                Ingresos
+              </button>
+              <button class="tab-btn" data-tab="egresos">Egresos</button>
+              <button class="tab-btn" data-tab="balance">Balance</button>
+            </div>
+
+            <!-- Tab: Ingresos -->
+            <div id="tab-ingresos" class="tab-panel">
+              <div class="card">
+                <h3>Ingresos</h3>
+                <div id="ingresos-content">
+                  <p class="text-muted">
+                    No hay datos de ingresos registrados para esta fecha.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab: Egresos -->
+            <div id="tab-egresos" class="tab-panel hidden">
+              <!-- Category: Reposiciones -->
+              <div class="card category-section">
+                <h3 class="category-title">Reposiciones</h3>
+                <div id="egresos-reposiciones-container">
+                  <table class="table-compact" id="table-reposiciones">
+                    <thead>
+                      <tr>
+                        <th>Proveedor</th>
+                        <th>Día</th>
+                        <th>Monto Bruto</th>
+                        <th>Tipo Comprobante</th>
+                        <th>Factura</th>
+                        <th></th>
+                        <!-- Expand/Action column -->
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- Rows injected by JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Category: Costos de Apertura -->
+              <div class="card category-section">
+                <h3 class="category-title">Costos de Apertura</h3>
+                <div id="egresos-apertura-container">
+                  <table class="table-compact">
+                    <thead>
+                      <tr>
+                        <th>Proveedor</th>
+                        <th>Monto Bruto</th>
+                        <th>Día</th>
+                        <th>Tipo Comprobante</th>
+                        <th>Factura</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- Rows injected by JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Category: Sueldos -->
+              <div class="card category-section">
+                <h3 class="category-title">Sueldos</h3>
+                <div id="egresos-sueldos-container">
+                  <table class="table-compact">
+                    <thead>
+                      <tr>
+                        <th>Cargo</th>
+                        <th>Monto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- Rows injected by JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab: Balance -->
+            <div id="tab-balance" class="tab-panel hidden">
+              <div class="card">
+                <h3>Resumen de Balance</h3>
+                <div id="balance-summary-content">
+                  <!-- Summary injected here -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../../assets/js/core/config.js"></script>
+    <script src="../../assets/js/layout.js"></script>
+    <script src="../../assets/js/modules/auth.js"></script>
+    <script src="../../assets/js/modules/gerencia-balance.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        if (window.AuthModule) await window.AuthModule.init();
+        window.LayoutModule.injectLayout("gerencia-balance");
+
+        if (window.GerenciaBalanceModule) {
+          window.GerenciaBalanceModule.init();
+        }
+      });
+    </script>
+  </body>
+</html>

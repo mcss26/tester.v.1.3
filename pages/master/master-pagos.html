@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tipos de Pago - Tester v1.1</title>
+    <!-- Libs -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar injected by layout.js -->
+        <nav id="sidebar-container"></nav>
+
+        <!-- Main Content -->
+        <main>
+            <header id="header-container"></header>
+            
+            <div id="page-content">
+                <div class="content-header">
+                    <h2>Master Data - Tipos de Pago</h2>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Listado de Tipos de Comprobante / Pago</h3>
+                        <div class="card-actions">
+                            <button class="btn-success" id="btn-new-payment-type">+ Nuevo Tipo</button>
+                        </div>
+                    </div>
+                    <div id="pagos-list">
+                        <p>Cargando...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Nuevo -->
+            <div id="modal-new-pago" class="modal-overlay hidden" aria-hidden="true">
+                 <div class="modal-card modal-card-sm">
+                    <div class="modal-header">
+                        <h3>Nuevo Tipo de Pago</h3>
+                        <button type="button" class="btn-icon" id="btn-close-payment-type" aria-label="Cerrar">&times;</button>
+                    </div>
+                    <form id="form-new-pago">
+                        <div class="form-field">
+                            <label for="new-pago-name">Nombre / Tipo</label>
+                            <input type="text" id="new-pago-name" required placeholder="Ej: Factura A, Ticket X">
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" id="btn-cancel-payment-type">Cancelar</button>
+                            <button type="submit" class="btn-success">Crear</button>
+                        </div>
+                    </form>
+                 </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../../assets/js/core/config.js"></script>
+    <script src="../../assets/js/layout.js"></script>
+    <script src="../../assets/js/modules/auth.js"></script>
+    <script src="../../assets/js/modules/master-pagos.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.AuthModule) await window.AuthModule.init();
+            window.LayoutModule.injectLayout('master-pagos');
+            
+            if (window.MasterPagosModule) {
+                window.MasterPagosModule.init();
+            }
+        });
+    </script>
+</body>
+</html>

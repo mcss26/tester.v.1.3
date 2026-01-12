@@ -1,0 +1,165 @@
+/* =========================================================
+   login.css — Aurora Red Theme (Unified)
+   ========================================================= */
+
+:root {
+    --bg-page: #000000;
+    --text-primary: #FFFFFF;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-placeholder: rgba(255, 255, 255, 0.4);
+    
+    --accent: #FF3B30;
+    --accent-hover: #D70015;
+    
+    --glass-bg: rgba(28, 28, 30, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.15);
+    
+    --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+    --radius-xl: 24px;
+    --radius-md: 12px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    /* Red Aurora Gradient */
+    background: radial-gradient(circle at 50% 30%, #5e0a0a 0%, #1a0000 60%, #000000 100%);
+    background-size: cover;
+    background-attachment: fixed;
+    
+    color: var(--text-primary);
+    font-family: var(--font-stack);
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* Auth Card */
+.card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-xl);
+    padding: 40px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    animation: fadeIn 0.8s ease-out;
+}
+
+/* Typography */
+.header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    text-align: center;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.01em;
+}
+
+.header p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin: 0 0 32px 0;
+}
+
+/* Forms */
+.auth-field {
+    margin-bottom: 20px;
+}
+
+input {
+    width: 100%;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 16px;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.15);
+}
+
+input::placeholder {
+    color: var(--text-placeholder);
+}
+
+/* Button */
+.btn-primary {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 10px;
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
+}
+
+.btn-primary.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+    content: "Cargando..."; /* Fallback simplistic */
+}
+
+/* Messages */
+.auth-message {
+    min-height: 20px;
+    margin-top: 20px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.auth-message.visible {
+    opacity: 1;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    margin-top: 32px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

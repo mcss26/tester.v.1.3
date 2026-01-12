@@ -1,0 +1,11 @@
+.allocation-grid {
+  display: grid;
+  grid-template-columns: 2fr 100px 120px 100px; /* Position | Qty | Remuneration | Subtotal */
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+.allocation-grid:last-child {
+  border-bottom: none;
+}

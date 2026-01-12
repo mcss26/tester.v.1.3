@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operativo - Tester v1.1</title>
+    <!-- Libs -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar injected by layout.js -->
+        <nav id="sidebar-container"></nav>
+
+        <!-- Main Content -->
+        <main>
+            <header id="header-container"></header>
+            
+            <div id="page-content">
+                <div class="content-header">
+                    <h2>Stock Operativo</h2>
+                </div>
+
+                <div id="content-operativo-stock">
+                    <div class="tab-container">
+                        <button id="tab-btn-op-stock-actual" class="tab-btn active">Stock Actual (Solicitar)</button>
+                        <button id="tab-btn-op-stock-pending" class="tab-btn">Estado de Solicitudes</button>
+                    </div>
+
+                    <!-- Tab 1: Stock Actual (Request) -->
+                    <div id="op-tab-actual" class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3>Stock Actual</h3>
+                                <p class="text-muted">Se sugieren packs según Stock Ideal - Actual.</p>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn-success" id="btn-open-request">Solicitar faltantes</button>
+                            </div>
+                        </div>
+                        <div id="op-stock-list">Cargando...</div>
+                    </div>
+
+                    <!-- Tab 2: Request Status -->
+                    <div id="op-tab-pending" class="hidden card">
+                        <div class="card-header">
+                            <div>
+                                <h3>Estado de Solicitudes</h3>
+                                <p class="text-muted">Pendientes y en reposición.</p>
+                            </div>
+                        </div>
+                        <div id="op-pending-list">Cargando...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Request -->
+            <div id="modal-request-stock" class="modal-overlay hidden" aria-hidden="true">
+                 <div class="modal-card modal-card-lg">
+                    <div class="modal-header">
+                        <h3>Confirmar Solicitud de Pedido</h3>
+                        <button type="button" class="btn-icon" id="btn-close-request-modal" aria-label="Cerrar">&times;</button>
+                    </div>
+                    <div class="form-field">
+                        <label for="request-op-date-select">Fecha Operativa (Planificada)</label>
+                        <select id="request-op-date-select">
+                             <option value="">Seleccione una fecha...</option>
+                        </select>
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Actual</th>
+                                    <th>Ideal</th>
+                                    <th>Pack</th>
+                                    <th>Sugerido</th>
+                                    <th>Pedir</th>
+                                    <th>Justificación</th>
+                                </tr>
+                            </thead>
+                            <tbody id="request-preview-body"></tbody>
+                        </table>
+                    </div>
+                    <div class="form-actions split">
+                        <button type="button" class="btn-secondary" id="btn-cancel-request">Cancelar</button>
+                        <button type="button" class="btn-success" id="btn-confirm-request">Confirmar pedido</button>
+                    </div>
+                 </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../../assets/js/core/config.js"></script>
+    <script src="../../assets/js/layout.js"></script>
+    <script src="../../assets/js/modules/auth.js"></script>
+    <script src="../../assets/js/modules/operativo-stock.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.AuthModule) await window.AuthModule.init();
+            window.LayoutModule.injectLayout('operativo-stock');
+            if (window.OperationalStockModule) {
+                window.OperationalStockModule.init();
+                window.OperationalStockModule.loadOpStockList();
+            }
+        });
+
+    </script>
+</body>
+</html>

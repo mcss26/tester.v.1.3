@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encargados - Tester v1.1</title>
+    <!-- Libs -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar injected by layout.js -->
+        <nav id="sidebar-container"></nav>
+
+        <!-- Main Content -->
+        <main>
+            <header id="header-container"></header>
+
+            <div id="page-content">
+                <div class="content-header">
+                    <h2>Encargados - Convocatorias</h2>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3>Convocar Staff por Area</h3>
+                            <p class="text-muted">Selecciona a tu equipo y envia convocatorias.</p>
+                        </div>
+                        <div class="card-actions">
+                            <div class="search-group">
+                                <input type="date" id="encargados-date">
+                                <input type="text" id="search-encargados-input" placeholder="Buscar personal..." autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="encargados-tabs" class="tab-container">
+                        <button type="button" class="tab-btn active" data-area="all">Todos</button>
+                        <button type="button" class="tab-btn" data-area="barra">Barra</button>
+                        <button type="button" class="tab-btn" data-area="caja">Caja</button>
+                        <button type="button" class="tab-btn" data-area="limpieza">Limpieza</button>
+                        <button type="button" class="tab-btn" data-area="seguridad">Seguridad</button>
+                        <button type="button" class="tab-btn" data-area="produccion">Produccion</button>
+                    </div>
+
+                    <div class="table-scroll">
+                        <table class="table-compact">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Cargo</th>
+                                    <th class="text-center">Estado</th>
+                                    <th class="text-center">Accion</th>
+                                </tr>
+                            </thead>
+                            <tbody id="encargados-table-body">
+                                <!-- Dynamic Content -->
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">Cargando personal...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="table-note mt-sm">Convoca solo el personal disponible para la fecha seleccionada.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../../assets/js/core/config.js"></script>
+    <script src="../../assets/js/layout.js"></script>
+    <script src="../../assets/js/modules/auth.js"></script>
+    <script src="../../assets/js/modules/encargados-convocatorias.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.AuthModule) await window.AuthModule.init();
+            window.LayoutModule.injectLayout('encargados-convocatorias');
+            if (window.EncargadosConvocatoriasModule) window.EncargadosConvocatoriasModule.init();
+        });
+    </script>
+</body>
+</html>

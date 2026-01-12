@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Stock - Tester v1.1</title>
+    <!-- Libs -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar injected by layout.js -->
+        <nav id="sidebar-container"></nav>
+
+        <!-- Main Content -->
+        <main>
+            <header id="header-container"></header>
+            
+            <div id="page-content">
+                <div class="content-header">
+                    <h2>Stock en Vivo</h2>
+                </div>
+
+                <!-- Live Stock -->
+                <div id="content-stock-vivo" class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3>Inventario Actual</h3>
+                            <p class="text-muted">Ajusta stock real e ideal por SKU.</p>
+                        </div>
+                        <div class="card-actions">
+                            <div class="search-group">
+                                <input type="text" id="search-stock-input" placeholder="Buscar producto..." autocomplete="off">
+                                <button class="btn-primary" id="btn-refresh-stock">Actualizar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="stock-tabs-container" class="tab-container"></div>
+                    <div id="live-stock-container">Cargando stock...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../../assets/js/core/config.js"></script>
+    <script src="../../assets/js/layout.js"></script>
+    <script src="../../assets/js/modules/auth.js"></script>
+    <script src="../../assets/js/modules/admin-stock.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.AuthModule) await window.AuthModule.init();
+            window.LayoutModule.injectLayout('admin-stock');
+            
+            if (window.AdminStockModule) {
+                window.AdminStockModule.init();
+                window.AdminStockModule.loadLiveStock();
+            }
+        });
+
+        // Global proxies
+        function loadLiveStock() { if(window.AdminStockModule) window.AdminStockModule.loadLiveStock(); }
+    </script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarifario - Tester v1.1</title>
+    <!-- Libs -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar injected by layout.js -->
+        <nav id="sidebar-container"></nav>
+
+        <!-- Main Content -->
+        <main>
+            <header id="header-container"></header>
+
+            <div id="page-content">
+                <div class="content-header">
+                    <h2>Master Data - Tarifario</h2>
+                </div>
+
+                <div class="tab-container mb-md">
+                    <button type="button" class="tab-btn active" data-tab="cargos">Cargos</button>
+                    <button type="button" class="tab-btn" data-tab="apertura">Costos de Apertura</button>
+                    <button type="button" class="tab-btn" data-tab="fijos">Costos Fijos</button>
+                </div>
+
+                <div id="tab-cargos" class="tab-panel">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3>Listado de Cargos</h3>
+                                <p class="text-muted">Administra roles y remuneraciones base.</p>
+                            </div>
+                            <div class="card-actions">
+                                <div class="search-group">
+                                    <input type="text" id="search-cargos-input" placeholder="Buscar cargo..." autocomplete="off">
+                                </div>
+                                <button type="button" class="btn-success" id="btn-create-cargo">Nuevo</button>
+                            </div>
+                        </div>
+                        <div class="table-scroll">
+                            <table class="table-compact">
+                                <thead>
+                                    <tr>
+                                        <th>Cargo</th>
+                                        <th>Area</th>
+                                        <th class="text-center">Turno</th>
+                                        <th class="text-center">Dotacion Base</th>
+                                        <th class="text-right">Remuneracion Base</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cargos-table-body">
+                                    <!-- Injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="table-note mt-sm">Actualiza cargos y turnos para mantener el tarifario alineado.</p>
+                    </div>
+                </div>
+
+                <div id="tab-apertura" class="tab-panel hidden">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3>Costos de Apertura</h3>
+                                <p class="text-muted">Gastos necesarios para iniciar la operativa.</p>
+                            </div>
+                            <div class="card-actions">
+                                <button type="button" class="btn-success" id="btn-create-apertura">Nuevo Costo</button>
+                            </div>
+                        </div>
+                        <div class="table-scroll">
+                            <table class="table-compact">
+                                <thead>
+                                    <tr>
+                                        <th>Descripcion</th>
+                                        <th>Proveedor</th>
+                                        <th class="text-right">Monto</th>
+                                        <th class="text-center">Pago (dias antes)</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="apertura-table-body">
+                                    <!-- Injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="table-note mt-sm">Define gastos previos a la fecha operativa.</p>
+                    </div>
+                </div>
+
+                <div id="tab-fijos" class="tab-panel hidden">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3>Costos Fijos</h3>
+                                <p class="text-muted">Gastos recurrentes de operacion.</p>
+                            </div>
+                            <div class="card-actions">
+                                <button type="button" class="btn-success" id="btn-create-fijo">Nuevo Costo Fijo</button>
+                            </div>
+                        </div>
+                        <div class="table-scroll">
+                            <table class="table-compact">
+                                <thead>
+                                    <tr>
+                                        <th>Descripcion</th>
+                                        <th>Proveedor</th>
+                                        <th class="text-right">Monto</th>
+                                        <th class="text-center">Frecuencia</th>
+                                        <th>Prox. Vencimiento</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fijos-table-body">
+                                    <!-- Injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="table-note mt-sm">Monitorea vencimientos y costos recurrentes.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal-cargo" class="modal-overlay hidden" aria-hidden="true">
+        <div class="modal-card modal-card-sm">
+            <div class="modal-header">
+                <h3 id="modal-title-cargo">Nuevo Cargo</h3>
+                <button type="button" class="btn-icon close-modal" data-target="modal-cargo" aria-label="Cerrar">&times;</button>
+            </div>
+            <form id="form-cargo">
+                <div class="form-grid">
+                    <div class="form-field span-2">
+                        <label for="input-cargo-name">Nombre del Cargo</label>
+                        <input type="text" id="input-cargo-name" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="select-cargo-area">Area</label>
+                        <select id="select-cargo-area">
+                            <option value="">-- Seleccionar --</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="select-cargo-shift">Turno</label>
+                        <select id="select-cargo-shift">
+                            <option value="">Seleccionar</option>
+                            <option value="1">Turno 1</option>
+                            <option value="1/2">Turno 1/2</option>
+                            <option value="Noche">Turno Noche</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="input-cargo-quantity">Dotacion por Defecto</label>
+                        <input type="number" id="input-cargo-quantity" min="0" value="0">
+                    </div>
+                    <div class="form-field">
+                        <label for="input-cargo-salary">Remuneracion Base ($)</label>
+                        <input type="number" id="input-cargo-salary" step="0.01">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary close-modal" data-target="modal-cargo">Cancelar</button>
+                    <button type="submit" class="btn-success">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-apertura" class="modal-overlay hidden" aria-hidden="true">
+        <div class="modal-card modal-card-sm">
+            <div class="modal-header">
+                <h3 id="modal-title-apertura">Nuevo Costo Apertura</h3>
+                <button type="button" class="btn-icon close-modal" data-target="modal-apertura" aria-label="Cerrar">&times;</button>
+            </div>
+            <form id="form-apertura">
+                <div class="form-grid">
+                    <div class="form-field span-2">
+                        <label for="input-apertura-desc">Descripcion del Gasto</label>
+                        <input type="text" id="input-apertura-desc" required placeholder="Ej: Hielo inicio jornada">
+                    </div>
+                    <div class="form-field">
+                        <label for="select-apertura-supplier">Proveedor</label>
+                        <select id="select-apertura-supplier">
+                            <option value="">-- Seleccionar --</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="input-apertura-amount">Monto ($)</label>
+                        <input type="number" id="input-apertura-amount" required step="0.01">
+                    </div>
+                    <div class="form-field span-2">
+                        <label for="input-apertura-offset">Dias antes de fecha operativa</label>
+                        <input type="number" id="input-apertura-offset" placeholder="0 = mismo dia" value="0">
+                        <span class="form-hint">Cuantos dias antes se debe realizar el pago.</span>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary close-modal" data-target="modal-apertura">Cancelar</button>
+                    <button type="submit" class="btn-success">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-fijo" class="modal-overlay hidden" aria-hidden="true">
+        <div class="modal-card modal-card-sm">
+            <div class="modal-header">
+                <h3 id="modal-title-fijo">Nuevo Costo Fijo</h3>
+                <button type="button" class="btn-icon close-modal" data-target="modal-fijo" aria-label="Cerrar">&times;</button>
+            </div>
+            <form id="form-fijo">
+                <div class="form-grid">
+                    <div class="form-field span-2">
+                        <label for="input-fijo-desc">Descripcion</label>
+                        <input type="text" id="input-fijo-desc" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="select-fijo-supplier">Proveedor</label>
+                        <select id="select-fijo-supplier">
+                            <option value="">-- Seleccionar --</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="input-fijo-amount">Monto Ultimo ($)</label>
+                        <input type="number" id="input-fijo-amount" step="0.01">
+                    </div>
+                    <div class="form-field">
+                        <label for="select-fijo-freq">Frecuencia</label>
+                        <select id="select-fijo-freq">
+                            <option value="Mensual">Mensual</option>
+                            <option value="Quincenal">Quincenal</option>
+                            <option value="Semanal">Semanal</option>
+                            <option value="Anual">Anual</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="input-fijo-date">Prox. Vencimiento</label>
+                        <input type="date" id="input-fijo-date">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary close-modal" data-target="modal-fijo">Cancelar</button>
+                    <button type="submit" class="btn-success">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../../assets/js/core/config.js"></script>
+    <script src="../../assets/js/layout.js"></script>
+    <script src="../../assets/js/modules/auth.js"></script>
+    <script src="../../assets/js/modules/master-tarifario.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.AuthModule) await window.AuthModule.init();
+            window.LayoutModule.injectLayout('master-tarifario');
+            if (window.MasterTarifarioModule) window.MasterTarifarioModule.init();
+        });
+    </script>
+</body>
+</html>

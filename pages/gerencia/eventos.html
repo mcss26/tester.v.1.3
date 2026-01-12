@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Eventos - Gerencia MIDNIGHT CLUB</title>
+    
+    <!-- Supabase & Modules -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script defer src="../../assets/js/core/config.js"></script>
+    <script src="../../assets/js/modules/gerencia.js" defer></script>
+    <link rel="stylesheet" href="../../assets/css/modules/gerencia.css">
+</head>
+<body class="gerencia-mode">
+
+    <main class="gerencia-main">
+        
+        <div id="events-view" class="fade-in">
+            <div class="events-container">
+                <header class="events-header">
+                    <!-- Actions Left: Volver -->
+                    <div class="header-actions" style="margin-right: 20px;">
+                        <a href="gerencia-index.html" class="btn-back" style="text-decoration:none;">
+                            &larr; Volver
+                        </a>
+                    </div>
+
+                    <div class="events-title">
+                        <h2>Gestión de Eventos</h2>
+                        <p>Panel de Administración y Planificación</p>
+                    </div>
+                    
+                    <!-- Right placeholder if needed, or flex alignment -->
+                    <div style="flex:1;"></div>
+                </header>
+                
+                <!-- Tabs -->
+                <div class="tabs-container">
+                    <button id="tab-btn-new" class="tab-btn active">Nuevo Evento</button>
+                    <button id="tab-btn-active" class="tab-btn">Activos</button>
+                    <button id="tab-btn-history" class="tab-btn">Historial</button>
+                </div>
+
+                <!-- Tab Content: New -->
+                <div id="tab-content-new" class="fade-in">
+                    <div class="form-panel">
+                        <div class="form-group">
+                            <label class="form-label">Fecha del Evento</label>
+                            <input type="date" id="input-event-date" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Nombre (Opcional)</label>
+                            <input type="text" id="input-event-name" class="form-input" placeholder="Ej. Fiesta Aniversario">
+                        </div>
+                        
+                        <button id="btn-create-submit" class="glass-button btn-submit">Crear Evento</button>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Active -->
+                <div id="tab-content-active" class="hidden fade-in">
+                    <table class="events-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Nombre</th>
+                                <th>Estado</th>
+                                <th>Detalles</th>
+                            </tr>
+                        </thead>
+                        <tbody id="list-active-events">
+                            <tr><td colspan="4" class="text-center text-muted">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Tab Content: History -->
+                <div id="tab-content-history" class="hidden fade-in">
+                    <table class="events-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Nombre</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="list-history-events">
+                             <tr><td colspan="3" class="text-center text-muted">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+    
+    <!-- Auto-init logic for this specific page -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Need to wait for module to load if defer is used, but DOMContentLoaded usually fires after defer scripts?
+            // Actually defer scripts execute before DOMContentLoaded.
+            if(window.GerenciaModule) {
+                window.GerenciaModule.init();
+                // Force switch to 'new' or load some data if needed
+            }
+        });
+    </script>
+</body>
+</html>

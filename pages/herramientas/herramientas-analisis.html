@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de Consumo - Midnight Club</title>
+    <!-- Libs -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar injected by layout.js -->
+        <nav id="sidebar-container"></nav>
+
+        <!-- Main Content -->
+        <main>
+            <header id="header-container"></header>
+            
+            <div id="page-content">
+                <div id="content-herramientas-consumo" class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3>Análisis de Consumo</h3>
+                            <p class="text-muted">Importa consumos, calcula stock ideal y revisa tendencias.</p>
+                        </div>
+                    </div>
+                    <div id="analysis-tabs-container" class="tab-container">
+                        <!-- Rendered by JS -->
+                    </div>
+
+                    <!-- Tab: Importar -->
+                    <div id="analysis-tab-importar" class="analysis-section">
+                        <div class="analysis-panel">
+                            <h4>Importar Consumo (Excel)</h4>
+                            <div class="form-grid">
+                                <div class="form-field">
+                                    <label for="import-date">Fecha Operativa</label>
+                                    <input type="date" id="import-date">
+                                </div>
+                                <div class="form-field span-2">
+                                    <label for="import-file">Archivo Excel</label>
+                                    <input type="file" id="import-file" accept=".xlsx, .xls" onchange="window.handleFileSelect(event)">
+                                    <small id="import-file-name" class="form-hint"></small>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="import-preview" class="analysis-panel"></div>
+                    </div>
+
+                    <!-- Tab: Analizar -->
+                    <div id="analysis-tab-analizar" class="analysis-section hidden">
+                        <div class="analysis-panel">
+                            <h4>Calcular Stock Ideal</h4>
+                            <div class="analysis-row">
+                                <div class="form-field">
+                                    <label for="analyze-date-start">Fecha inicio</label>
+                                    <input type="date" id="analyze-date-start">
+                                </div>
+                                <div class="form-field">
+                                    <label for="analyze-date-end">Fecha fin</label>
+                                    <input type="date" id="analyze-date-end">
+                                </div>
+                                <div class="form-field">
+                                    <label>&nbsp;</label>
+                                    <button class="btn-primary" id="btn-analyze-ideal">Analizar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="analysis-results" class="analysis-panel">
+                            <p class="text-muted">Seleccione un rango para calcular recomendaciones.</p>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Histórica -->
+                    <div id="analysis-tab-historica" class="analysis-section hidden">
+                        <div class="analysis-panel">
+                            <h4>Tendencias de Consumo</h4>
+                            <div class="analysis-chart">
+                                <canvas id="history-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../../assets/js/core/config.js"></script>
+    <script src="../../assets/js/layout.js"></script>
+    <script src="../../assets/js/modules/auth.js"></script>
+    <script src="../../assets/js/modules/herramientas-analisis.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.AuthModule) await window.AuthModule.init();
+            // Correct key for layout mapping
+            window.LayoutModule.injectLayout('herramientas-analisis');
+            
+            if (window.loadConsumptionAnalysis) {
+                window.loadConsumptionAnalysis();
+            } else {
+                console.error('loadConsumptionAnalysis not found in analisis.js');
+            }
+        });
+    </script>
+</body>
+</html>

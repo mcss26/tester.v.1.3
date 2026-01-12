@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Stock - MIDNIGHT CLUB</title>
+    <link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar injected by layout.js -->
+        <nav id="sidebar-container"></nav>
+
+        <!-- Main Content -->
+        <main>
+            <header id="header-container"></header>
+            
+            <div id="page-content">
+                <div class="content-header">
+                    <h2>Logística - Solicitudes de Reposición</h2>
+                </div>
+
+                <div id="content-logistica-repos">
+                    <div class="card">
+                        <h3>Solicitudes por Procesar</h3>
+                        <div id="logistics-repos-list">Cargando...</div>
+                    </div>
+                </div>
+            </div>
+
+             <!-- Modal Assign Logistics -->
+             <div id="modal-assign-logistics" class="modal-overlay hidden" aria-hidden="true">
+                  <div class="modal-card modal-card-lg">
+                    <div class="modal-header">
+                     <h3>Logística: Asignar Proveedores por Item</h3>
+                        <button type="button" class="btn-icon" id="btn-close-logistics-modal" aria-label="Cerrar">&times;</button>
+                    </div>
+                    <div id="assign-items-container">
+                        <!-- Items with dropdowns will be injected here -->
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="btn-cancel-logistics">Cancelar</button>
+                        <button type="button" class="btn-success" id="btn-confirm-logistics">Confirmar Arribo</button>
+                    </div>
+                  </div>
+             </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../../assets/js/core/config.js"></script>
+    <script src="../../assets/js/layout.js"></script>
+    <script src="../../assets/js/modules/auth.js"></script>
+    <script src="../../assets/js/modules/logistica-stock.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.AuthModule) await window.AuthModule.init();
+            window.LayoutModule.injectLayout('logistica-stock');
+            
+            if (window.LogisticsStockModule) {
+                window.LogisticsStockModule.init();
+                window.LogisticsStockModule.loadStockList();
+            }
+        });
+
+    </script>
+</body>
+</html>

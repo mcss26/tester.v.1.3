@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proveedores - Tester v1.1</title>
+    <!-- Libs -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar injected by layout.js -->
+        <nav id="sidebar-container"></nav>
+
+        <!-- Main Content -->
+        <main>
+            <header id="header-container"></header>
+            
+            <div id="page-content">
+                <div class="content-header">
+                    <h2>Master Data - Proveedores</h2>
+                </div>
+
+                <div id="content-proveedores" class="card">
+                    <div class="card-header">
+                        <h3>Listado de Proveedores</h3>
+                        <div class="card-actions">
+                            <button class="btn-success" id="btn-new-supplier">+ Nuevo Proveedor</button>
+                        </div>
+                    </div>
+                    <p class="text-muted">Click en un proveedor para ver detalles.</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Razon Social</th>
+                                <th>CUIT</th>
+                                <th>Banco</th>
+                                <th>CBU</th>
+                                <th>Alias</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="suppliers-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Modals -->
+            <div id="modal-proveedores" class="modal-overlay hidden" aria-hidden="true">
+                 <div class="modal-card">
+                    <div class="modal-header">
+                        <h3 id="supplier-modal-title">Nuevo Proveedor</h3>
+                        <button type="button" class="btn-icon" id="close-supplier-modal" aria-label="Cerrar">&times;</button>
+                    </div>
+                    <form id="supplier-form">
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="supplier-name">Nombre *</label>
+                                <input type="text" id="supplier-name" name="nombre" required autocomplete="organization">
+                            </div>
+                            <div class="form-field">
+                                <label for="supplier-razon">Razon Social</label>
+                                <input type="text" id="supplier-razon" name="razon_social" autocomplete="organization">
+                            </div>
+                            <div class="form-field">
+                                <label for="supplier-cuit">CUIT</label>
+                                <input type="text" id="supplier-cuit" name="cuit" inputmode="numeric" placeholder="11 digitos">
+                            </div>
+                            <div class="form-field">
+                                <label for="supplier-banco">Banco</label>
+                                <input type="text" id="supplier-banco" name="banco" autocomplete="organization">
+                            </div>
+                            <div class="form-field">
+                                <label for="supplier-cbu">CBU</label>
+                                <input type="text" id="supplier-cbu" name="cbu" inputmode="numeric" placeholder="22 digitos">
+                            </div>
+                            <div class="form-field">
+                                <label for="supplier-alias">Alias</label>
+                                <input type="text" id="supplier-alias" name="alias">
+                            </div>
+                            <div class="form-field">
+                                <label for="supplier-email">Email</label>
+                                <input type="email" id="supplier-email" name="email" autocomplete="email">
+                            </div>
+                            <div class="form-field">
+                                <label for="supplier-telefonos">Telefonos</label>
+                                <input type="text" id="supplier-telefonos" name="telefonos" placeholder="Separar por comas">
+                                <small class="form-hint">Ej: 11 5555 1234, 341 444 7777</small>
+                            </div>
+                            <div class="form-field">
+                                <label for="supplier-contactos">Contactos</label>
+                                <input type="text" id="supplier-contactos" name="contactos" placeholder="Separar por comas">
+                                <small class="form-hint">Ej: Juan Perez, Maria Lopez</small>
+                            </div>
+                        </div>
+                        <p id="supplier-form-message" class="form-message" role="alert"></p>
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" id="btn-cancel-supplier">Cancelar</button>
+                            <button type="submit" class="btn-success" id="btn-save-supplier">Guardar</button>
+                        </div>
+                    </form>
+                 </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../../assets/js/core/config.js"></script>
+    <script src="../../assets/js/layout.js"></script>
+    <script src="../../assets/js/modules/auth.js"></script>
+    <script src="../../assets/js/modules/master-proveedores.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.AuthModule) await window.AuthModule.init();
+            window.LayoutModule.injectLayout('master-proveedores');
+            
+            if (window.MasterProveedoresModule) {
+                window.MasterProveedoresModule.init();
+                window.MasterProveedoresModule.loadSuppliers();
+            }
+        });
+    </script>
+</body>
+</html>

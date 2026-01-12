@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SKUs - Tester v1.1</title>
+    <!-- Libs -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar injected by layout.js -->
+        <nav id="sidebar-container"></nav>
+
+        <!-- Main Content -->
+        <main>
+            <header id="header-container"></header>
+            
+            <div id="page-content">
+                <div class="content-header">
+                    <h2>Master Data - SKUs</h2>
+                </div>      
+
+                <div id="content-skus" class="card">
+                    <div class="card-header">
+                        <h3>Listado de SKUs por Categoría</h3>
+                        <div class="card-actions">
+                            <button class="btn-secondary" id="btn-add-category">+ Categoría</button>
+                            <button class="btn-success" id="btn-new-sku">+ Nuevo SKU</button>
+                        </div>
+                    </div>
+                    <div id="sku-tabs-container" class="tab-container">Cargando categorías...</div>
+                    <div id="sku-list"><p class="text-muted">Seleccione una categoría para ver los SKUs.</p></div>
+                </div>
+            </div>
+
+            <!-- Modals -->
+            <div id="modal-new-sku" class="modal-overlay hidden" aria-hidden="true">
+                 <div class="modal-card">
+                    <div class="modal-header">
+                        <h3>Nuevo SKU</h3>
+                        <button type="button" class="btn-icon" id="btn-close-new-sku" aria-label="Cerrar">&times;</button>
+                    </div>
+                    <form id="form-new-sku">
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="new-sku-category">Categoría</label>
+                                <select id="new-sku-category"></select>
+                            </div>
+                            <div class="form-field">
+                                <label for="new-sku-supplier">Proveedor Default (Opcional)</label>
+                                <select id="new-sku-supplier"></select>
+                            </div>
+                            <div class="form-field span-2">
+                                <label for="new-sku-name">Nombre del Producto</label>
+                                <input type="text" id="new-sku-name" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="new-sku-ml">ML (Bebidas)</label>
+                                <input type="number" id="new-sku-ml" step="0.01">
+                            </div>
+                            <div class="form-field">
+                                <label for="new-sku-cost">Costo Unit ($)</label>
+                                <input type="number" id="new-sku-cost" step="0.01">
+                            </div>
+                            <div class="form-field">
+                                <label for="new-sku-pack-qty">Cant. por Pack</label>
+                                <input type="number" id="new-sku-pack-qty" step="1">
+                            </div>
+                            <div class="form-field">
+                                <label for="new-sku-pack-cost">Costo Pack ($)</label>
+                                <input type="number" id="new-sku-pack-cost" readonly class="input-readonly">
+                            </div>
+                        </div>
+
+                        <div class="form-actions split">
+                            <button type="button" class="btn-secondary" id="btn-cancel-new-sku">Cancelar</button>
+                            <button type="submit" class="btn-success">Crear SKU</button>
+                        </div>
+                    </form>
+                 </div>
+            </div>
+
+            <!-- Edit Modal -->
+            <div id="modal-edit-sku" class="modal-overlay hidden" aria-hidden="true">
+                <div class="modal-card modal-card-sm">
+                    <div class="modal-header">
+                        <h3>Editar SKU</h3>
+                        <button type="button" class="btn-icon" id="btn-close-edit-sku" aria-label="Cerrar">&times;</button>
+                    </div>
+                    <form id="form-edit-sku">
+                        <input type="hidden" id="edit-sku-id">
+                        <div class="form-grid">
+                            <div class="form-field span-2">
+                                <label for="edit-sku-name">Nombre</label>
+                                <input type="text" id="edit-sku-name" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="edit-sku-cost">Costo Unit ($)</label>
+                                <input type="number" id="edit-sku-cost" step="0.01">
+                            </div>
+                            <div class="form-field">
+                                <label for="edit-sku-pack-quantity">Cant. Pack</label>
+                                <input type="number" id="edit-sku-pack-quantity" step="1">
+                            </div>
+                            <div class="form-field span-2">
+                                <label for="edit-sku-supplier">Proveedor Preferido</label>
+                                <select id="edit-sku-supplier"></select>
+                            </div>
+                            <div class="form-field span-2">
+                                <label for="edit-sku-category">Categoría</label>
+                                <select id="edit-sku-category"></select>
+                            </div>
+                            <div class="form-field span-2">
+                                <label for="edit-sku-active">Estado</label>
+                                <select id="edit-sku-active">
+                                    <option value="true">Activo</option>
+                                    <option value="false">Inactivo</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn-danger" id="btn-delete-sku">Eliminar</button>
+                            <div class="button-group">
+                                <button type="button" class="btn-secondary" id="btn-cancel-edit-sku">Cerrar</button>
+                                <button type="submit" class="btn-primary">Guardar</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../../assets/js/core/config.js"></script>
+    <script src="../../assets/js/layout.js"></script>
+    <script src="../../assets/js/modules/auth.js"></script>
+    <script src="../../assets/js/modules/master-skus.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.AuthModule) await window.AuthModule.init();
+            window.LayoutModule.injectLayout('master-skus');
+            
+            if (window.MasterSkusModule) {
+                window.MasterSkusModule.init();
+                window.MasterSkusModule.loadSkuCategories();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finanzas - Tester v1.1</title>
+    <!-- Libs -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar injected by layout.js -->
+        <nav id="sidebar-container"></nav>
+
+        <!-- Main Content -->
+        <main>
+            <header id="header-container"></header>
+            
+            <div id="page-content">
+                <div class="content-header">
+                    <h2>Finanzas - Cuentas por Pagar</h2>
+                </div>
+
+                <div id="content-finanzas-pagos">
+                    <div class="card">
+                        <h3>Pagos Pendientes</h3>
+                        <div id="payments-list">Cargando...</div>
+                    </div>
+                </div>
+
+
+            </div>
+            <!-- Payment Modal -->
+            <div id="modal-payment" class="modal-overlay hidden" aria-hidden="true">
+                <div class="modal-card modal-card-sm">
+                    <div class="modal-header">
+                        <h3>Registrar Pago</h3>
+                        <button type="button" class="btn-icon" id="btn-close-payment" aria-label="Cerrar">&times;</button>
+                    </div>
+                    
+                    <div id="payment-supplier-info" class="panel mb-md">
+                        <!-- Injected via JS -->
+                    </div>
+
+                    <div class="form-field">
+                        <label for="payment-amount-display" class="text-strong">Total a Pagar</label>
+                        <div id="payment-amount-display" class="text-strong amount-highlight">$0.00</div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="payment-type-select">Tipo de Comprobante</label>
+                        <select id="payment-type-select">
+                            <option value="">Seleccione...</option>
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="payment-file-input">Comprobante de Pago (Opcional)</label>
+                        <input type="file" id="payment-file-input">
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="btn-cancel-payment">Cancelar</button>
+                        <button type="button" class="btn-success" id="btn-confirm-payment">Confirmar Pago</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../../assets/js/core/config.js"></script>
+    <script src="../../assets/js/layout.js"></script>
+    <script src="../../assets/js/modules/auth.js"></script>
+    <script src="../../assets/js/modules/admin-pagos.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.AuthModule) await window.AuthModule.init();
+            window.LayoutModule.injectLayout('admin-pagos');
+            
+            if (window.AdminPagosModule) {
+                window.AdminPagosModule.init();
+                window.AdminPagosModule.loadPaymentsList();
+            }
+        });
+    </script>
+</body>
+</html>

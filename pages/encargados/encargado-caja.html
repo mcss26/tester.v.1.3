@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encargado Caja - Tester v1.1</title>
+    <!-- Libs -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar injected by layout.js -->
+        <nav id="sidebar-container"></nav>
+
+        <!-- Main Content -->
+        <main>
+            <header id="header-container"></header>
+
+            <div id="page-content" data-encargados-area="caja">
+                <div class="content-header">
+                    <h2>Encargado - Caja</h2>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3>Gestion de Convocatorias</h3>
+                            <p class="text-muted">Convoca y confirma personal de caja.</p>
+                        </div>
+                    </div>
+
+                    <div id="encargados-tabs" class="tab-container">
+                        <button type="button" class="tab-btn active" data-tab="convocatoria">Convocatoria</button>
+                        <button type="button" class="tab-btn" data-tab="equipo">Equipo</button>
+                        <button type="button" class="tab-btn" data-tab="historial">Historial</button>
+                    </div>
+
+                    <div id="tab-convocatoria" class="tab-panel">
+                        <div class="row-between mb-md">
+                            <div class="inline-row">
+                                <span class="badge">Fecha activa</span>
+                                <input type="date" id="encargados-date">
+                            </div>
+                            <div class="search-group">
+                                <input type="text" id="search-encargados-input" placeholder="Buscar personal..." autocomplete="off">
+                            </div>
+                        </div>
+
+                        <div class="table-scroll">
+                            <table class="table-compact">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Cargo</th>
+                                        <th class="text-center">Estado</th>
+                                        <th class="text-center">Accion</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="encargados-table-body"></tbody>
+                            </table>
+                        </div>
+                        <p class="table-note mt-sm">Convoca solo el personal disponible para la fecha seleccionada.</p>
+                    </div>
+
+                    <div id="tab-equipo" class="tab-panel hidden">
+                        <p class="text-muted">Proximamente: equipo asignado y disponibilidad por cargo.</p>
+                    </div>
+
+                    <div id="tab-historial" class="tab-panel hidden">
+                        <p class="text-muted">Proximamente: historial de convocatorias y respuestas.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../../assets/js/core/config.js"></script>
+    <script src="../../assets/js/layout.js"></script>
+    <script src="../../assets/js/modules/auth.js"></script>
+    <script src="../../assets/js/modules/encargados-area.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.AuthModule) await window.AuthModule.init();
+            window.LayoutModule.injectLayout('encargados-caja');
+            if (window.EncargadosAreaModule) window.EncargadosAreaModule.init();
+        });
+    </script>
+</body>
+</html>

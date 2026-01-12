@@ -1,0 +1,82 @@
+<!-- login.html (optimizado, dark mode, accesible) -->
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="description" content="Midnight Club - Sistema de gestión empresarial" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#0B0B0C" />
+  <title>Iniciar Sesión - MIDNIGHT CLUB</title>
+
+  <link rel="stylesheet" href="assets/css/login.css" />
+
+  <!-- Libs (defer mantiene orden) -->
+  <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+  <!-- Core / Modules -->
+  <script defer src="assets/js/core/config.js"></script>
+  <script defer src="assets/js/modules/auth.js"></script>
+  <script defer src="assets/js/modules/login.js"></script>
+  <script defer src="assets/js/ui/login-controller.js"></script>
+</head>
+
+<body>
+  <main class="login-container" role="main">
+    <article class="card" aria-labelledby="title" aria-describedby="subtitle">
+      <header class="header">
+        <h1 id="title">MIDNIGHT CLUB</h1>
+        <p id="subtitle">Inicia sesión para continuar</p>
+      </header>
+
+      <form id="loginForm" class="form" novalidate aria-describedby="message">
+        <p id="email-hint" class="visually-hidden">Ingresá tu correo electrónico.</p>
+
+        <div class="auth-field">
+          <label for="email" class="visually-hidden">Correo electrónico</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="Correo electrónico"
+            required
+            autocomplete="email"
+            inputmode="email"
+            spellcheck="false"
+            autocapitalize="none"
+            aria-required="true"
+            aria-describedby="email-hint"
+          />
+        </div>
+
+        <div class="auth-field">
+          <label for="password" class="visually-hidden">Contraseña</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Contraseña"
+            required
+            autocomplete="current-password"
+            aria-required="true"
+          />
+        </div>
+
+        <button type="submit" class="btn-primary" id="btn-submit" aria-label="Ingresar al sistema">
+          Ingresar
+        </button>
+      </form>
+
+      <div id="message" class="auth-message" role="alert" aria-live="polite"></div>
+
+      <footer class="footer">
+        <p>¿Olvidaste tu contraseña? Contacta al administrador.</p>
+      </footer>
+
+      <noscript>
+        <p class="noscript">Activá JavaScript para iniciar sesión.</p>
+      </noscript>
+    </article>
+  </main>
+</body>
+</html>

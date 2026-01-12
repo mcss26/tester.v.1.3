@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitudes de Stock - Tester v1.1</title>
+    <!-- Libs -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar injected by layout.js -->
+        <nav id="sidebar-container"></nav>
+
+        <!-- Main Content -->
+        <main>
+            <header id="header-container"></header>
+            
+            <div id="page-content">
+                <div class="content-header">
+                    <h2>Gestión de Solicitudes</h2>
+                </div>
+
+                <div id="content-solicitudes" class="card">
+                    <h3>Pendientes de Valorización</h3>
+                    <div id="mgmt-requests-list">Cargando...</div>
+                </div>
+            </div>
+
+            <!-- Modal Approve Request (Global) -->
+            <div id="modal-approve-request" class="modal-overlay hidden" aria-hidden="true">
+                 <div class="modal-card modal-card-lg">
+                    <div class="modal-header">
+                        <h3>Gestión y Valorización de Pedido #<span id="approve-request-id-display"></span></h3>
+                        <button type="button" class="btn-icon" id="btn-close-approve" aria-label="Cerrar">&times;</button>
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th class="text-center">Cant. Packs</th>
+                                    <th class="text-center">Cant. Unidades</th>
+                                    <th class="text-center">Stock Actual</th>
+                                    <th class="text-right">Costo Pack ($)</th>
+                                    <th class="text-right">Subtotal</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="approve-preview-body"></tbody>
+                        </table>
+                    </div>
+                    <div class="form-actions split">
+                        <h2>Total: <span id="approve-total-cost" class="amount-highlight">$0.00</span></h2>
+                        <div class="button-group">
+                            <button type="button" class="btn-secondary" id="btn-cancel-approve">Cancelar</button>
+                            <button type="button" class="btn-success" id="btn-confirm-approve">Confirmar</button>
+                        </div>
+                    </div>
+                 </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../../assets/js/core/config.js"></script>
+    <script src="../../assets/js/layout.js"></script>
+    <script src="../../assets/js/modules/auth.js"></script>
+    <script src="../../assets/js/modules/admin-solicitudes.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.AuthModule) await window.AuthModule.init();
+            window.LayoutModule.injectLayout('admin-solicitudes');
+            
+            if (window.AdminSolicitudesModule) {
+                window.AdminSolicitudesModule.init();
+                window.AdminSolicitudesModule.loadAdminSolicitudes();
+            }
+        });
+
+    </script>
+</body>
+</html>

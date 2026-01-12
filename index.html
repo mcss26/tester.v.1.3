@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planificar Evento - Admin</title>
+    <!-- Libs -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="assets/css/base.css">
+    <link rel="stylesheet" href="assets/css/modules/admin-plan.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar injected by layout.js -->
+        <nav id="sidebar-container"></nav>
+
+        <!-- Main Content -->
+        <main>
+            <header id="header-container"></header>
+            
+            <div id="page-content">
+                <div class="content-header">
+                    <h2>Planificar Eventos y Dotación</h2>
+                </div>
+
+                <div id="content-planificar">
+                    <!-- Tab Navigation -->
+                    <div class="tab-container">
+                        <button id="btn-tab-nueva" class="tab-btn active">Nuevo Evento</button>
+                        <button id="btn-tab-en-curso" class="tab-btn">Eventos Activos</button>
+                        <button id="btn-tab-historial" class="tab-btn">Historial</button>
+                    </div>
+
+                    <!-- Tab Content -->
+                    <div id="tab-nueva" class="card">
+                        <h3>Crear Nuevo Evento</h3>
+                        <div class="inline-row mt-md">
+                            <div class="form-field">
+                                <label for="input-event-date">Fecha del Evento</label>
+                                <input type="date" id="input-event-date">
+                            </div>
+                            <div class="form-field">
+                                <label for="input-event-name">Nombre (Opcional)</label>
+                                <input type="text" id="input-event-name" placeholder="Ej. Fiesta Fin de Año">
+                            </div>
+                            <button id="btn-create-event" class="btn-success" style="align-self: flex-end;">Crear Evento</button>
+                        </div>
+                    </div>
+
+                    <div id="tab-en-curso" class="hidden card">
+                        <h3>Eventos Activos (Planning / Open)</h3>
+                        <div id="list-active-events" class="mt-sm">
+                            Cargando...
+                        </div>
+                    </div>
+
+                    <div id="tab-historial" class="hidden card">
+                        <h3>Historial de Eventos</h3>
+                        <div id="list-history-events" class="mt-sm">
+                            Cargando...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal: Gestionar Dotación -->
+    <div id="modal-allocation" class="modal-overlay hidden">
+        <div class="modal-card modal-card-lg"> <!-- Increased width -->
+            <div class="modal-header">
+                <h3>Gestionar Dotación</h3>
+                <button class="btn-icon" onclick="document.getElementById('modal-allocation').classList.add('hidden')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="allocation-event-id">
+                <p id="allocation-event-info" class="text-muted mb-md"></p>
+                
+                <div class="mb-md">
+                    <label class="mb-xs d-block">Filtrar por Área</label>
+                    <div id="allocation-area-tabs" class="flex-row gap-xs scroll-x pb-xs">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="allocation-grid text-strong text-muted" style="border-bottom: 2px solid var(--border-color); margin-bottom: 10px;">
+                        <span>Cargo</span>
+                        <span class="text-center">Cant.</span>
+                        <span class="text-center">Remuneración</span>
+                        <span class="text-right">Subtotal</span>
+                    </div>
+                    <div id="positions-list">
+                        <!-- Populated dynamically -->
+                        <p class="text-center text-muted">Seleccione un área para ver cargos</p>
+                    </div>
+                </div>
+                
+                <div class="panel mt-md text-right">
+                    <span class="text-strong text-muted">Total Estimado Dotación:</span>
+                    <span id="allocation-total-cost" class="amount-highlight-sm ms-2">$0.00</span>
+                </div>
+            </div>
+            <div class="modal-footer mt-md text-right">
+                <button class="btn-secondary" onclick="document.getElementById('modal-allocation').classList.add('hidden')">Cancelar</button>
+                <button id="btn-save-allocation" class="btn-primary">Guardar (Borrador)</button>
+                <button id="btn-save-notify" class="btn-success">Guardar y Enviar Aviso</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="assets/js/core/config.js"></script>
+    <script src="assets/js/layout.js"></script>
+    <script src="assets/js/modules/auth.js"></script>
+    <script src="assets/js/modules/admin-plan.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.AuthModule) await window.AuthModule.init();
+            window.LayoutModule.injectLayout('general');
+            
+            if (window.AdminPlanModule) {
+                window.AdminPlanModule.init();
+            }
+        });
+    </script>
+</body>
+</html>

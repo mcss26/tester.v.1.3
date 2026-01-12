@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finanzas - Calendario de Pagos</title>
+    <!-- Libs -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../assets/css/base.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar injected by layout.js -->
+        <nav id="sidebar-container"></nav>
+
+        <!-- Main Content -->
+        <main>
+            <header id="header-container"></header>
+            
+            <div id="page-content">
+                <div class="content-header">
+                    <h2>Finanzas - Calendario de Pagos</h2>
+                </div>
+
+                <div id="content-finanzas-calendario">
+                    <div class="card">
+                        <h3>Próximos Pagos Agendados</h3>
+                        <p class="text-muted mb-md">
+                            Listado de pagos con fecha asignada, ordenados cronológicamente.
+                        </p>
+                        <div id="payments-calendar">Cargando...</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../../assets/js/core/config.js"></script>
+    <script src="../../assets/js/layout.js"></script>
+    <script src="../../assets/js/modules/auth.js"></script>
+    <script src="../../assets/js/modules/admin-pagos.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.AuthModule) await window.AuthModule.init();
+            window.LayoutModule.injectLayout('contabilidad-calendario');
+            
+            if (window.AdminPagosModule) {
+                window.AdminPagosModule.init();
+                window.AdminPagosModule.loadPaymentsCalendar();
+            }
+        });
+    </script>
+</body>
+</html>
