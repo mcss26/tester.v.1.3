@@ -18,6 +18,10 @@
 <body class="welcome-screen">
   <main class="center-content">
     <section class="welcome-section">
+      <div class="mode-switch-container">
+          <button class="mode-chip active" data-mode="erp">ERP</button>
+          <button class="mode-chip" data-mode="crm">CRM</button>
+      </div>
       <p class="label-welcome">BIENVENIDO</p>
       <h1 id="user-name" class="title-name">...</h1>
       <p class="role-subtitle">Agente de operación y producción de <strong>MIDNIGHT CLUB</strong></p>
@@ -31,6 +35,7 @@
       </div>
     </section>
 
+    <!-- ERP ACTIONS -->
     <section id="action-container" class="action-section hidden">
       <div class="actions-grid">
         <button id="btn-open-convocation" class="action-card glass-button">
@@ -47,6 +52,27 @@
 
         <button id="btn-load-consumption" class="action-card glass-button">
           <span class="action-label">Cargar Consumos</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- CRM ACTIONS -->
+    <section id="crm-action-container" class="action-section hidden">
+      <div class="actions-grid">
+        <button id="btn-crm-requests" class="action-card glass-button">
+          <span class="action-label">Solicitudes</span>
+        </button>
+
+        <button id="btn-crm-access" class="action-card glass-button">
+          <span class="action-label">Accesos</span>
+        </button>
+
+        <button id="btn-crm-birthday" class="action-card glass-button">
+          <span class="action-label">Cumpleaño</span>
+        </button>
+
+        <button id="btn-crm-menu" class="action-card glass-button">
+          <span class="action-label">Carta</span>
         </button>
       </div>
     </section>

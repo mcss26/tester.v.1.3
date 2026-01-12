@@ -11,7 +11,9 @@ window.OperativoModule = {
     stockFilter: 'active',
     analysisTab: 'importar',
     dashboardMode: null,
+    dashboardMode: null,
     dashboardRequestId: 0,
+    activeMode: 'erp',
 
     init: async function() {
         console.log('OperativoModule init...');
@@ -25,13 +27,13 @@ window.OperativoModule = {
             return;
         }
         this.session = session;
-        await this.loadUserProfile(session.user.id);
-        
-        // 2. Load Open Events
-        await this.loadOpenEvents();
-
-        // 3. UI Bindings
         this.bindUI();
+        
+        // 2. Load Profile + Open Events in parallel
+        await Promise.all([
+            this.loadUserProfile(session.user.id),
+            this.loadOpenEvents()
+        ]);
     },
 
     bindUI: function() {
@@ -64,12 +66,35 @@ window.OperativoModule = {
                 window.location.href = '../../login.html';
             }
         });
+
+        // Mode Switcher
+        document.querySelectorAll('.mode-chip').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const mode = e.target.dataset.mode;
+                if (mode) this.setMode(mode);
+            });
+        });
+
+        // CRM Actions (Placeholders)
+        document.getElementById('btn-crm-requests')?.addEventListener('click', () => {
+             this.openDashboard('requests'); // Reusing requests dashboard
+        });
+        document.getElementById('btn-crm-access')?.addEventListener('click', () => {
+             alert('Módulo de Accesos: Próximamente');
+        });
+        document.getElementById('btn-crm-birthday')?.addEventListener('click', () => {
+             alert('Módulo de Cumpleaños: Próximamente');
+        });
+        document.getElementById('btn-crm-menu')?.addEventListener('click', () => {
+             // Redirect to Carta if available, or placeholder
+             window.location.href = '../../carta.html'; 
+        });
     },
 
     loadUserProfile: async function(userId) {
         const { data, error } = await window.sb
             .from('profiles')
-            .select('*')
+            .select('id, full_name, email, role, area_id, is_active')
             .eq('id', userId)
             .single();
 
@@ -104,33 +129,81 @@ window.OperativoModule = {
     },
 
     loadOpenEvents: async function() {
-        const { data: events, error } = await window.sb
-            .from('events')
-            .select('*')
-            .neq('status', 'closed')
-            .order('date', { ascending: true });
-
         const chipsContainer = document.getElementById('date-chips');
         if (!chipsContainer) return;
 
-        chipsContainer.innerHTML = ''; 
+        const cached = this.getCachedOpenEvents();
+        if (cached?.events?.length) {
+            this.renderOpenEvents(cached.events, chipsContainer);
+        }
+
+        if (cached?.fresh) return;
+
+        const { data: events, error } = await window.sb
+            .from('events')
+            .select('id, date, status')
+            .neq('status', 'closed')
+            .order('date', { ascending: true });
 
         if (error || !events || events.length === 0) {
-            chipsContainer.innerHTML = '<p style="font-size:12px; opacity:0.6;">No hay eventos abiertos.</p>';
+            if (!cached?.events?.length) {
+                chipsContainer.innerHTML = '<p style="font-size:12px; opacity:0.6;">No hay eventos abiertos.</p>';
+            }
             return;
         }
 
+        this.setCachedOpenEvents(events);
+        this.renderOpenEvents(events, chipsContainer);
+    },
+
+    renderOpenEvents: function(events, container) {
+        container.innerHTML = '';
+
+        if (!events || events.length === 0) {
+            container.innerHTML = '<p style="font-size:12px; opacity:0.6;">No hay eventos abiertos.</p>';
+            return;
+        }
+
+        const fragment = document.createDocumentFragment();
         events.forEach(event => {
             const dateStr = new Date(event.date).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
             
             const chip = document.createElement('div');
-            chip.className = 'chip-date cursor-pointer'; // Added cursor-pointer
-            chip.style.margin = '0 4px'; // Add spacing
+            chip.className = 'chip-date cursor-pointer';
+            chip.style.margin = '0 4px';
             chip.textContent = dateStr.toUpperCase();
             chip.onclick = () => this.selectEvent(event, chip);
             
-            chipsContainer.appendChild(chip);
+            fragment.appendChild(chip);
         });
+        container.appendChild(fragment);
+    },
+
+    getCachedOpenEvents: function() {
+        try {
+            const raw = window.sessionStorage.getItem('op-open-events');
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed || !Array.isArray(parsed.events)) return null;
+            const ageMs = Date.now() - parsed.timestamp;
+            return {
+                events: parsed.events,
+                fresh: ageMs < 60000
+            };
+        } catch (err) {
+            return null;
+        }
+    },
+
+    setCachedOpenEvents: function(events) {
+        try {
+            window.sessionStorage.setItem('op-open-events', JSON.stringify({
+                events,
+                timestamp: Date.now()
+            }));
+        } catch (err) {
+            // Ignore storage errors (quota/private mode)
+        }
     },
 
     selectEvent: function(event, chipEl) {
@@ -140,12 +213,44 @@ window.OperativoModule = {
         document.querySelectorAll('.chip-date').forEach(c => c.classList.remove('active'));
         chipEl.classList.add('active');
 
-        // Show Action Container
-        const actionContainer = document.getElementById('action-container');
-        if(actionContainer) actionContainer.classList.remove('hidden');
+        // Show Action Container based on Mode
+        this.refreshActionVisibility();
         
         // Hide dashboard if open
         document.getElementById('staff-dashboard').classList.add('hidden');
+    },
+
+    setMode: function(mode) {
+        this.activeMode = mode;
+        
+        // Update Chips UI
+        document.querySelectorAll('.mode-chip').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
+
+        // Update Visibility
+        this.refreshActionVisibility();
+        
+        // Optional: Close dashboard on mode switch?
+        document.getElementById('staff-dashboard').classList.add('hidden');
+    },
+
+    refreshActionVisibility: function() {
+        const actionContainer = document.getElementById('action-container');
+        const crmContainer = document.getElementById('crm-action-container');
+        
+        // Hide all first
+        if (actionContainer) actionContainer.classList.add('hidden');
+        if (crmContainer) crmContainer.classList.add('hidden');
+
+        // Only show if event is selected
+        if (!this.activeEvent) return;
+
+        if (this.activeMode === 'erp') {
+            if (actionContainer) actionContainer.classList.remove('hidden');
+        } else {
+            if (crmContainer) crmContainer.classList.remove('hidden');
+        }
     },
 
     openDashboard: async function(mode) {
@@ -405,6 +510,7 @@ window.OperativoModule = {
         table.appendChild(thead);
 
         const tbody = document.createElement('tbody');
+        const fragment = document.createDocumentFragment();
         filtered.forEach(item => {
             const row = document.createElement('tr');
             if (item.suggested > 0) row.classList.add('is-low');
@@ -432,8 +538,9 @@ window.OperativoModule = {
             row.appendChild(this.buildOpCell(item.suggested || '-', true));
             row.appendChild(this.buildOpCell(item.packQty, true));
 
-            tbody.appendChild(row);
+            fragment.appendChild(row);
         });
+        tbody.appendChild(fragment);
         table.appendChild(tbody);
         scroll.appendChild(table);
         panel.appendChild(scroll);
@@ -885,6 +992,7 @@ window.OperativoModule = {
             const maxValue = topItems[0]?.qty || 1;
 
             chart.textContent = '';
+            const chartFragment = document.createDocumentFragment();
             topItems.forEach(item => {
                 const row = document.createElement('div');
                 row.className = 'op-bar-row';
@@ -905,17 +1013,20 @@ window.OperativoModule = {
                 value.textContent = Math.round(item.qty);
                 row.appendChild(value);
 
-                chart.appendChild(row);
+                chartFragment.appendChild(row);
             });
+            chart.appendChild(chartFragment);
 
+            const tableFragment = document.createDocumentFragment();
             topItems.forEach(item => {
                 const row = document.createElement('tr');
                 row.appendChild(this.buildTextCell(item.name));
                 row.appendChild(this.buildTextCell(Math.round(item.qty)));
                 row.appendChild(this.buildTextCell('En desarrollo'));
                 row.appendChild(this.buildTextCell('En desarrollo'));
-                tbody.appendChild(row);
+                tableFragment.appendChild(row);
             });
+            tbody.appendChild(tableFragment);
         } catch (err) {
             console.error('Error loading history summary:', err);
             chart.innerHTML = '<p class="op-muted">No se pudo cargar el histórico.</p>';

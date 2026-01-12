@@ -723,7 +723,36 @@ body{
 .chip-date.cursor-pointer {
     cursor: pointer;
 }
-.chip-date.active {
-    background: var(--primary-color, #FF3B30); /* Highlight active */
-    transform: scale(1.05);
+/* Mode Switcher (ERP/CRM) */
+.mode-switch-container {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 24px; /* Space before welcome label */
+}
+
+.mode-chip {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.6);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.mode-chip:hover {
+  background: rgba(255,255,255,0.15);
+  color: white;
+}
+
+.mode-chip.active {
+  background: var(--accent, #FF3B30);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
 }
