@@ -67,10 +67,48 @@
         </button>
       </form>
 
+      <!-- Registration Form (Hidden by default) -->
+      <form id="registerForm" class="form hidden" novalidate aria-describedby="message">
+          <h2 class="text-center mb-sm text-sm text-muted">Registro de Personal</h2>
+          
+          <div class="auth-field">
+              <label for="reg-email" class="visually-hidden">Correo</label>
+              <input type="email" id="reg-email" placeholder="Correo electrónico" required autocomplete="email">
+          </div>
+          
+          <div class="auth-field">
+              <label for="reg-password" class="visually-hidden">Contraseña</label>
+              <input type="password" id="reg-password" placeholder="Contraseña" required autocomplete="new-password">
+          </div>
+
+          <div class="auth-field">
+              <label for="reg-confirm" class="visually-hidden">Confirmar Contraseña</label>
+              <input type="password" id="reg-confirm" placeholder="Confirmar contraseña" required autocomplete="new-password">
+          </div>
+
+          <div class="auth-field">
+              <label for="reg-area" class="visually-hidden">Área</label>
+              <select id="reg-area" class="auth-select" required>
+                  <option value="" disabled selected>Selecciona tu área</option>
+                  <!-- Populated by JS -->
+              </select>
+          </div>
+
+          <button type="submit" class="btn-primary" id="btn-register">
+              Crear Cuenta
+          </button>
+      </form>
+
       <div id="message" class="auth-message" role="alert" aria-live="polite"></div>
 
       <footer class="footer">
-        <p>¿Olvidaste tu contraseña? Contacta al administrador.</p>
+        <div id="login-actions">
+            <p><a href="#" id="toggle-register" class="link text-sm">¿Sos staff? Registrate aquí</a></p>
+            <p class="mt-xs text-xs">¿Olvidaste tu contraseña? Contacta al administrador.</p>
+        </div>
+        <div id="register-actions" class="hidden">
+             <p><a href="#" id="toggle-login" class="link text-sm">Ya tengo cuenta. Iniciar sesión.</a></p>
+        </div>
       </footer>
 
       <noscript>

@@ -229,7 +229,7 @@ window.AdminPlanModule = {
                     ${event.status === 'planning' ? `
                         <button class="btn-success btn-sm width-100 mt-xs"
                              onclick="event.stopPropagation(); AdminPlanModule.updateEventStatus('${eventId}', 'open')">
-                             Abrir Convocatoria
+                             Habilitar Personal
                         </button>
                     ` : ''}
                 </div>

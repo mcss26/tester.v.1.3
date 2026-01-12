@@ -24,12 +24,69 @@ function getLoginErrorMessage(err) {
 
 document.addEventListener("DOMContentLoaded", () => {
   const loginForm = document.getElementById("loginForm");
+  const registerForm = document.getElementById("registerForm");
+  const ui = window.LoginUI;
+
+  // --- UI Toggles ---
+  const toggleRegisterBtn = document.getElementById('toggle-register');
+  const toggleLoginBtn = document.getElementById('toggle-login');
+  const loginActions = document.getElementById('login-actions');
+  const registerActions = document.getElementById('register-actions');
+
+  if (toggleRegisterBtn) {
+      toggleRegisterBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          loginForm.classList.add('hidden');
+          registerForm.classList.remove('hidden');
+          loginActions.classList.add('hidden');
+          registerActions.classList.remove('hidden');
+          if (ui) ui.clearMessage();
+          loadAreas(); // Load areas when opening register
+      });
+  }
+
+  if (toggleLoginBtn) {
+      toggleLoginBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          registerForm.classList.add('hidden');
+          loginForm.classList.remove('hidden');
+          registerActions.classList.add('hidden');
+          loginActions.classList.remove('hidden');
+          if (ui) ui.clearMessage();
+      });
+  }
+
+  // --- Load Areas for Dropdown ---
+  async function loadAreas() {
+      const select = document.getElementById('reg-area');
+      if (!select || select.children.length > 1) return; // Already loaded
+
+      try {
+          if (!window.sb) throw new Error('Supabase no inicializado');
+          const { data: areas, error } = await window.sb.from('areas').select('*').eq('active', true);
+          
+          if (error) throw error;
+          
+          (areas || []).forEach(area => {
+              const opt = document.createElement('option');
+              opt.value = area.id;
+              opt.textContent = area.name; // e.g. "Barra"
+              opt.dataset.name = area.name;
+              select.appendChild(opt);
+          });
+      } catch (err) {
+          console.error('Error loading areas:', err);
+          if (ui) ui.showMessage('Error al cargar áreas.', 'error');
+      }
+  }
+
+
+  // --- LOGIN SUBMIT ---
   if (loginForm) {
     loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       
       // Use UI Controller if available
-      const ui = window.LoginUI;
       if (ui) {
           ui.clearMessage();
           ui.setLoadingState(true);
@@ -105,5 +162,75 @@ document.addEventListener("DOMContentLoaded", () => {
           }
       }
     });
+  }
+
+  // --- REGISTER SUBMIT ---
+  if (registerForm) {
+      registerForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          if (ui) { ui.clearMessage(); ui.setLoadingState(true); }
+
+          const email = document.getElementById('reg-email').value.trim();
+          const pass = document.getElementById('reg-password').value;
+          const confirm = document.getElementById('reg-confirm').value;
+          const areaSelect = document.getElementById('reg-area');
+          const areaId = areaSelect.value;
+          const areaName = areaSelect.options[areaSelect.selectedIndex]?.dataset.name || '';
+
+          if (pass !== confirm) {
+              if (ui) ui.showMessage('Las contraseñas no coinciden.', 'error');
+              return;
+          }
+          if (!areaId) {
+              if (ui) ui.showMessage('Debes seleccionar un área.', 'error');
+              return;
+          }
+
+          try {
+              if (!window.sb) throw new Error('Sistema no inicializado.');
+
+              // 1. SignUp
+              const { data, error } = await window.sb.auth.signUp({
+                  email: email,
+                  password: pass
+              });
+
+              if (error) throw error;
+              if (!data.user) throw new Error('No se pudo crear el usuario.');
+
+              // 2. Create Profile
+              const role = `staff ${areaName.toLowerCase()}`;
+              
+              const { error: profileError } = await window.sb.from('profiles').insert({
+                  id: data.user.id,
+                  email: email,
+                  role: role,
+                  area_id: areaId,
+                  is_active: true // Active by default as per request
+              });
+
+              if (profileError) {
+                  console.error('Error creating profile:', profileError);
+                  // Rollback? Too complex. Just warn.
+                  throw new Error('Usuario creado pero falló el perfil. Contacta soporte.');
+              }
+              
+              if (ui) {
+                ui.showMessage('Cuenta creada con éxito. Ingresando...', 'success');
+                // Brief delay to show success
+                setTimeout(() => {
+                    // Auto-login flow reuse? 
+                    // Actually signUp usually signs in automatically if email confirm is off.
+                    // Let's check session.
+                    window.location.reload(); 
+                }, 1500);
+              }
+
+          } catch (err) {
+              console.error("Register Error:", err);
+              const message = getLoginErrorMessage(err); // reuse msg parser
+              if (ui) ui.showMessage(message, 'error');
+          }
+      });
   }
 });
