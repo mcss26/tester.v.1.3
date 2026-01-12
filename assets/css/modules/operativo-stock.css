@@ -1,0 +1,493 @@
+/* Operativo Stock overrides */
+body.operativo-stock {
+    background: radial-gradient(circle at 50% 30%, #5e0a0a 0%, #1a0000 60%, #000000 100%);
+    color: #ffffff;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.operativo-stock .app-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.operativo-stock .content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.operativo-stock .content-header h2 {
+    font-size: 32px;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.operativo-stock .content-header p {
+    margin: 6px 0 0;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+}
+
+/* Hide layout containers */
+.operativo-stock #sidebar-container,
+.operativo-stock #header-container {
+    display: none;
+}
+
+/* Card styling */
+.operativo-stock .card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 24px;
+    margin-bottom: 20px;
+}
+
+.operativo-stock .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.operativo-stock .card-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.operativo-stock .card-actions.is-spaced {
+    margin-top: 10px;
+}
+
+.operativo-stock .text-muted {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.operativo-stock .text-danger {
+    color: #ff3b30 !important;
+}
+
+.operativo-stock h2,
+.operativo-stock h3 {
+    color: #ffffff;
+    margin-top: 0;
+}
+
+/* Back button */
+.operativo-stock .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 16px;
+    border-radius: 20px;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 14px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(10px);
+    transition: all 0.2s;
+}
+
+.operativo-stock .back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Tables */
+.operativo-stock table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 10px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.operativo-stock th {
+    text-align: left;
+    color: #ffffff;
+    opacity: 0.9;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+    padding: 12px 8px;
+    background: rgba(0, 0, 0, 0.4);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.operativo-stock td {
+    padding: 14px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 15px;
+    vertical-align: middle;
+}
+
+.operativo-stock .cell-center {
+    text-align: center;
+}
+
+.operativo-stock tbody tr:nth-child(even) td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.operativo-stock tbody tr.is-low td {
+    background: rgba(255, 59, 48, 0.06);
+}
+
+.operativo-stock tbody tr.is-selected td {
+    background: rgba(255, 59, 48, 0.14);
+}
+
+/* Tabs */
+.operativo-stock .tab-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    padding-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.operativo-stock .tab-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    font-weight: 500;
+}
+
+.operativo-stock .tab-btn.active {
+    color: #ffffff;
+    border-bottom-color: #ff3b30;
+}
+
+/* Inputs in modal */
+.operativo-stock select,
+.operativo-stock input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+/* Modals */
+.operativo-stock .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.operativo-stock .modal-card {
+    background: #1c1c1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    width: 90%;
+    max-width: 900px;
+    border-radius: 16px;
+    padding: 0;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.operativo-stock .modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #252528;
+    flex-shrink: 0;
+}
+
+.operativo-stock .modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.operativo-stock .modal-body {
+    padding: 24px;
+    flex-grow: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.operativo-stock .modal-footer {
+    padding: 20px 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: #252528;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+/* Buttons */
+.operativo-stock .btn-success {
+    background: #ff3b30;
+    border: none;
+    color: #ffffff;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.operativo-stock .btn-success:hover {
+    background: #d70015;
+    transform: scale(1.02);
+}
+
+.operativo-stock .btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.operativo-stock .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.operativo-stock button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.operativo-stock .btn-icon {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #ffffff;
+}
+
+/* Badges */
+.operativo-stock .status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.operativo-stock .status-low {
+    background: rgba(255, 59, 48, 0.2);
+    color: #ff3b30;
+    border: 1px solid rgba(255, 59, 48, 0.3);
+}
+
+.operativo-stock .status-excess {
+    background: rgba(255, 149, 0, 0.2);
+    color: #ff9500;
+    border: 1px solid rgba(255, 149, 0, 0.3);
+}
+
+.operativo-stock .status-neutral {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Utilities */
+.operativo-stock .hidden {
+    display: none !important;
+}
+
+.operativo-stock .table-scroll {
+    overflow-x: auto;
+    margin: 10px 0;
+    max-height: 520px;
+    overflow-y: auto;
+}
+
+.operativo-stock .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.operativo-stock .form-actions.split {
+    justify-content: space-between;
+}
+
+.operativo-stock .form-field {
+    margin-bottom: 16px;
+}
+
+.operativo-stock .form-field label {
+    display: block;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 6px;
+}
+
+.operativo-stock input[type="number"] {
+    width: 80px;
+    text-align: center;
+}
+
+.operativo-stock .table-input {
+    width: 70px;
+    padding: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.operativo-stock .table-input-full {
+    width: 100%;
+    padding: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    border-radius: 6px;
+}
+
+.operativo-stock .checkbox-lg {
+    width: 18px;
+    height: 18px;
+    accent-color: #ff3b30;
+}
+
+.operativo-stock .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin: 16px 0 8px;
+}
+
+.operativo-stock .summary-card {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 14px 16px;
+}
+
+.operativo-stock .summary-label {
+    margin: 0;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.operativo-stock .summary-value {
+    margin: 6px 0 2px;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.operativo-stock .summary-sub {
+    margin: 0;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.operativo-stock .modal-summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.operativo-stock .modal-summary p {
+    margin: 0;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.operativo-stock .modal-summary strong {
+    display: block;
+    margin-top: 6px;
+    font-size: 20px;
+    color: #ffffff;
+    letter-spacing: -0.01em;
+}
+
+.operativo-stock .request-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.operativo-stock .request-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.operativo-stock .request-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.operativo-stock .request-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 720px) {
+    .operativo-stock .content-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .operativo-stock .content-header h2 {
+        font-size: 26px;
+    }
+
+    .operativo-stock .modal-card {
+        width: 94%;
+        height: 88vh;
+    }
+}

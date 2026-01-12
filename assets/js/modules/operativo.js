@@ -158,7 +158,11 @@ window.OperativoModule = {
 
         if (error || !events || events.length === 0) {
             if (!cached?.events?.length) {
-                chipsContainer.innerHTML = '<p style="font-size:12px; opacity:0.6;">No hay eventos abiertos.</p>';
+                chipsContainer.textContent = '';
+                const empty = document.createElement('p');
+                empty.className = 'op-muted op-message';
+                empty.textContent = 'No hay eventos abiertos.';
+                chipsContainer.appendChild(empty);
             }
             this.activeEvent = null;
             this.toggleActionContainer(false);
@@ -262,7 +266,7 @@ window.OperativoModule = {
 
     hideAllocationSubtitle: function() {
         const subtitleEl = document.getElementById('allocation-subtitle');
-        if (subtitleEl) subtitleEl.style.display = 'none';
+        if (subtitleEl) subtitleEl.classList.add('hidden');
     },
 
     setDashboardToolbar: function(contentNode) {
@@ -277,17 +281,23 @@ window.OperativoModule = {
         }
     },
 
-    setDashboardLoading: function(message) {
+    setDashboardMessage: function(message) {
         const listContainer = document.getElementById('content-list');
         if (!listContainer) return;
+        listContainer.textContent = '';
         const text = message || 'Cargando...';
-        listContainer.innerHTML = `<div class="op-muted" style="text-align:center; padding:16px;">${text}</div>`;
+        const note = document.createElement('div');
+        note.className = 'op-muted op-message';
+        note.textContent = text;
+        listContainer.appendChild(note);
+    },
+
+    setDashboardLoading: function(message) {
+        this.setDashboardMessage(message || 'Cargando...');
     },
 
     setDashboardEmpty: function(message) {
-        const listContainer = document.getElementById('content-list');
-        if (!listContainer) return;
-        listContainer.innerHTML = `<div class="op-muted" style="text-align:center; padding:16px;">${message}</div>`;
+        this.setDashboardMessage(message || 'Sin datos.');
     },
 
     isDashboardRequestActive: function(requestId, mode) {
@@ -392,9 +402,7 @@ window.OperativoModule = {
         wrapper.appendChild(tabs);
 
         const actions = document.createElement('div');
-        actions.style.display = 'flex';
-        actions.style.alignItems = 'center';
-        actions.style.gap = '8px';
+        actions.className = 'op-toolbar-actions';
 
         const meta = document.createElement('div');
         meta.className = 'op-muted';
@@ -599,9 +607,7 @@ window.OperativoModule = {
 
                 const summary = document.createElement('summary');
                 const left = document.createElement('div');
-                left.style.display = 'flex';
-                left.style.flexDirection = 'column';
-                left.style.gap = '6px';
+                left.className = 'op-detail-left';
 
                 const title = document.createElement('div');
                 title.className = 'op-detail-title';
@@ -1002,7 +1008,7 @@ window.OperativoModule = {
     buildOpCell: function(value, center) {
         const cell = document.createElement('td');
         cell.textContent = value;
-        if (center) cell.style.textAlign = 'center';
+        if (center) cell.classList.add('cell-center');
         return cell;
     },
 
@@ -1091,8 +1097,8 @@ window.OperativoModule = {
         const countEl = document.getElementById('required-count');
         const subtitleEl = document.getElementById('allocation-subtitle');
         if (!countEl) return;
-        
-        subtitleEl.style.display = 'block'; // Ensure visible
+
+        if (subtitleEl) subtitleEl.classList.remove('hidden');
         countEl.textContent = '...';
 
         // 1. Get Positions for Area
