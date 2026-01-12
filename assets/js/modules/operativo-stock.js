@@ -321,6 +321,7 @@ window.OperationalStockModule = {
             const packInput = document.createElement('input');
             packInput.type = 'number';
             packInput.min = '1';
+            packInput.step = '1';
             packInput.value = data.requested_packs;
             packInput.className = 'table-input';
             packInput.addEventListener('input', (event) => {

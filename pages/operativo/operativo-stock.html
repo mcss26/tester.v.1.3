@@ -48,6 +48,19 @@
             padding: 24px;
             margin-bottom: 20px;
         }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .card-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
         .text-muted { color: rgba(255,255,255,0.6) !important; }
         .text-danger { color: #FF3B30 !important; }
         h2, h3 { color: white; margin-top: 0; }
@@ -80,6 +93,14 @@
         tbody tr.is-selected td { background: rgba(255, 59, 48, 0.14); }
         
         /* Tabs */
+        .tab-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+            padding-bottom: 10px;
+            flex-wrap: wrap;
+        }
         .tab-btn {
             background: transparent; border: none; color: rgba(255,255,255,0.5);
             padding: 10px 20px; font-size: 16px; cursor: pointer; border-bottom: 2px solid transparent;
