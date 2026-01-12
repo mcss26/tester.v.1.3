@@ -3,113 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Operativo - Tester v1.1</title>
+    <title>Stock Operativo - Midnight Club</title>
     <!-- Libs -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <!-- CSS -->
-    <link rel="stylesheet" href="../../assets/css/base.css">
+    <!-- CSS (Operativo Theme) -->
+    <link rel="stylesheet" href="../../assets/css/index.css">
+    <style>
+        /* Specific overrides for this page in Red Mode */
+        body {
+            /* Force Red Bg logic just in case index.css variable differs */
+             background: radial-gradient(circle at 50% 30%, #5e0a0a 0%, #1a0000 60%, #000000 100%);
+             color: white;
+             min-height: 100vh;
+             padding: 20px;
+        }
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        /* Hide Layout Containers */
+        #sidebar-container, #header-container { display: none; }
+        
+        /* Card Styling to Match Glass */
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .text-muted { color: rgba(255,255,255,0.6) !important; }
+        h2, h3 { color: white; margin-top: 0; }
+        
+        /* Back Button */
+        .back-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 20px;
+            color: white; text-decoration: none; font-size: 14px; margin-bottom: 20px;
+            backdrop-filter: blur(10px); transition: all 0.2s;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; opacity: 0.6; font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 8px; }
+        td { padding: 12px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 14px; }
+        
+        /* Tabs */
+        .tab-btn {
+            background: transparent; border: none; color: rgba(255,255,255,0.5);
+            padding: 10px 20px; font-size: 16px; cursor: pointer; border-bottom: 2px solid transparent;
+        }
+        .tab-btn.active { color: white; border-bottom-color: #FF3B30; }
+
+        /* Inputs in Modal */
+        select, input { 
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px; border-radius: 8px;
+        }
+        .modal-card { background: #1c1c1e; border: 1px solid rgba(255,255,255,0.1); color: white; }
+    </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar injected by layout.js -->
-        <nav id="sidebar-container"></nav>
+        <!-- Back Button -->
+        <a href="operativo-index.html" class="back-btn">← Volver al Dashboard</a>
 
         <!-- Main Content -->
-        <main>
-            <header id="header-container"></header>
-            
-            <div id="page-content">
-                <div class="content-header">
-                    <h2>Stock Operativo</h2>
-                </div>
-
-                <div id="content-operativo-stock">
-                    <div class="tab-container">
-                        <button id="tab-btn-op-stock-actual" class="tab-btn active">Stock Actual (Solicitar)</button>
-                        <button id="tab-btn-op-stock-pending" class="tab-btn">Estado de Solicitudes</button>
-                    </div>
-
-                    <!-- Tab 1: Stock Actual (Request) -->
-                    <div id="op-tab-actual" class="card">
-                        <div class="card-header">
-                            <div>
-                                <h3>Stock Actual</h3>
-                                <p class="text-muted">Se sugieren packs según Stock Ideal - Actual.</p>
-                            </div>
-                            <div class="card-actions">
-                                <button class="btn-success" id="btn-open-request">Solicitar faltantes</button>
-                            </div>
-                        </div>
-                        <div id="op-stock-list">Cargando...</div>
-                    </div>
-
-                    <!-- Tab 2: Request Status -->
-                    <div id="op-tab-pending" class="hidden card">
-                        <div class="card-header">
-                            <div>
-                                <h3>Estado de Solicitudes</h3>
-                                <p class="text-muted">Pendientes y en reposición.</p>
-                            </div>
-                        </div>
-                        <div id="op-pending-list">Cargando...</div>
-                    </div>
-                </div>
+        <div id="page-content">
+            <div class="content-header">
+                <h2>Stock Operativo</h2>
             </div>
 
-            <!-- Modal Request -->
-            <div id="modal-request-stock" class="modal-overlay hidden" aria-hidden="true">
-                 <div class="modal-card modal-card-lg">
-                    <div class="modal-header">
-                        <h3>Confirmar Solicitud de Pedido</h3>
-                        <button type="button" class="btn-icon" id="btn-close-request-modal" aria-label="Cerrar">&times;</button>
+            <div id="content-operativo-stock">
+                <div class="tab-container">
+                    <button id="tab-btn-op-stock-actual" class="tab-btn active">Stock Actual (Solicitar)</button>
+                    <button id="tab-btn-op-stock-pending" class="tab-btn">Estado de Solicitudes</button>
+                </div>
+
+                <!-- Tab 1: Stock Actual (Request) -->
+                <div id="op-tab-actual" class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3>Stock Actual</h3>
+                            <p class="text-muted">Se sugieren packs según Stock Ideal - Actual.</p>
+                        </div>
+                        <div class="card-actions" style="margin-top:10px;">
+                            <button class="btn-success" id="btn-open-request">Solicitar faltantes</button>
+                        </div>
                     </div>
-                    <div class="form-field">
-                        <label for="request-op-date-select">Fecha Operativa (Planificada)</label>
-                        <select id="request-op-date-select">
-                             <option value="">Seleccione una fecha...</option>
-                        </select>
+                    <div id="op-stock-list">Cargando...</div>
+                </div>
+
+                <!-- Tab 2: Request Status -->
+                <div id="op-tab-pending" class="hidden card">
+                    <div class="card-header">
+                        <div>
+                            <h3>Estado de Solicitudes</h3>
+                            <p class="text-muted">Pendientes y en reposición.</p>
+                        </div>
                     </div>
-                    <div class="table-scroll">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Producto</th>
-                                    <th>Actual</th>
-                                    <th>Ideal</th>
-                                    <th>Pack</th>
-                                    <th>Sugerido</th>
-                                    <th>Pedir</th>
-                                    <th>Justificación</th>
-                                </tr>
-                            </thead>
-                            <tbody id="request-preview-body"></tbody>
-                        </table>
-                    </div>
-                    <div class="form-actions split">
-                        <button type="button" class="btn-secondary" id="btn-cancel-request">Cancelar</button>
-                        <button type="button" class="btn-success" id="btn-confirm-request">Confirmar pedido</button>
-                    </div>
-                 </div>
+                    <div id="op-pending-list">Cargando...</div>
+                </div>
             </div>
-        </main>
+        </div>
+
+        <!-- Modal Request -->
+        <div id="modal-request-stock" class="modal-overlay hidden" aria-hidden="true">
+                <div class="modal-card modal-card-lg">
+                <div class="modal-header">
+                    <h3>Confirmar Solicitud de Pedido</h3>
+                    <button type="button" class="btn-icon" id="btn-close-request-modal" aria-label="Cerrar" style="color:white;">&times;</button>
+                </div>
+                <div class="form-field">
+                    <label for="request-op-date-select">Fecha Operativa (Planificada)</label>
+                    <select id="request-op-date-select">
+                            <option value="">Seleccione una fecha...</option>
+                    </select>
+                </div>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Actual</th>
+                                <th>Ideal</th>
+                                <th>Pack</th>
+                                <th>Sugerido</th>
+                                <th>Pedir</th>
+                                <th>Justificación</th>
+                            </tr>
+                        </thead>
+                        <tbody id="request-preview-body"></tbody>
+                    </table>
+                </div>
+                <div class="form-actions split">
+                    <button type="button" class="btn-secondary" id="btn-cancel-request">Cancelar</button>
+                    <button type="button" class="btn-success" id="btn-confirm-request">Confirmar pedido</button>
+                </div>
+                </div>
+        </div>
     </div>
 
     <!-- Scripts -->
     <script src="../../assets/js/core/config.js"></script>
-    <script src="../../assets/js/layout.js"></script>
+    <!-- Removed LayoutModule injection since this is custom view -->
     <script src="../../assets/js/modules/auth.js"></script>
     <script src="../../assets/js/modules/operativo-stock.js"></script>
     
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             if (window.AuthModule) await window.AuthModule.init();
-            window.LayoutModule.injectLayout('operativo-stock');
+            // LayoutModule.injectLayout('operativo-stock'); // Disabled
+            
             if (window.OperationalStockModule) {
                 window.OperationalStockModule.init();
                 window.OperationalStockModule.loadOpStockList();
             }
         });
-
     </script>
 </body>
 </html>

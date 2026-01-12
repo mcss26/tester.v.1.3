@@ -36,7 +36,7 @@ window.OperativoModule = {
         });
         
         document.getElementById('btn-stock-check')?.addEventListener('click', () => {
-            alert('Módulo Stock Check: Próximamente');
+            window.location.href = './operativo-stock.html';
         });
 
         document.getElementById('btn-requests')?.addEventListener('click', () => {
