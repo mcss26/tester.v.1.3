@@ -45,9 +45,9 @@ body{
 }
 
 .operativo-home{
-  align-items:flex-start;
+  align-items:center;
   justify-content:flex-start;
-  padding-top:8px;
+  padding-top:4px;
 }
 
 .center-content{
@@ -64,11 +64,31 @@ body{
 }
 
 .operativo-home .center-content{
-  padding:8px 24px 24px;
+  min-height:100vh;
+  padding:0 24px 24px;
+  gap:20px;
+}
+
+.operativo-home .welcome-section{
+  min-height:45vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  transition:transform .35s ease, min-height .35s ease;
+}
+
+.operativo-home.event-selected .welcome-section{
+  min-height:24vh;
+  justify-content:flex-start;
+  transform:translateY(-18px);
 }
 
 /* Welcome */
-.welcome-section{ width:100%; }
+.welcome-section{
+  width:100%;
+  text-align:center;
+}
 
 .label-welcome{
   margin:0;
@@ -99,7 +119,11 @@ body{
 .role-subtitle strong{ color:var(--white); font-weight:600; }
 
 /* Dates / chips */
-.dates-section{ width:100%; }
+.dates-section{
+  width:100%;
+  display:flex;
+  justify-content:center;
+}
 
 .chips-row{
   width:100%;
@@ -110,10 +134,11 @@ body{
   -webkit-overflow-scrolling:touch;
   scrollbar-width:none;
 }
+.chips-row::-webkit-scrollbar{ display:none; }
 .operativo-home .chips-row{
   justify-content:center;
+  padding-top:6px;
 }
-.chips-row::-webkit-scrollbar{ display:none; }
 
 .chip{
   flex:0 0 auto;
@@ -744,6 +769,9 @@ body{
   align-items:center;
   gap:8px;
   margin-top:0;
+  position:sticky;
+  top:4px;
+  z-index:5;
 }
 
 .mode-switch-container {

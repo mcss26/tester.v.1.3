@@ -20,8 +20,6 @@ window.OperativoModule = {
     activeMode: 'erp',
 
     init: async function() {
-        console.log('OperativoModule init...');
-        
         // 1. Check Session & Auth
         if (!window.sb) return;
         const { data: { session }, error } = await window.sb.auth.getSession();
@@ -135,6 +133,7 @@ window.OperativoModule = {
     loadOpenEvents: async function() {
         const chipsContainer = document.getElementById('date-chips');
         if (!chipsContainer) return;
+        document.body.classList.remove('event-selected');
 
         const cached = this.getCachedOpenEvents();
         if (cached?.events?.length) {
@@ -153,6 +152,9 @@ window.OperativoModule = {
             if (!cached?.events?.length) {
                 chipsContainer.innerHTML = '<p style="font-size:12px; opacity:0.6;">No hay eventos abiertos.</p>';
             }
+            this.activeEvent = null;
+            this.refreshActionVisibility();
+            this.updateEventDateLabel();
             return;
         }
 
@@ -181,6 +183,7 @@ window.OperativoModule = {
             fragment.appendChild(chip);
         });
         container.appendChild(fragment);
+        container.scrollTo({ left: 0 });
     },
 
     getCachedOpenEvents: function() {
@@ -212,6 +215,7 @@ window.OperativoModule = {
 
     selectEvent: function(event, chipEl) {
         this.activeEvent = event;
+        document.body.classList.add('event-selected');
 
         // Highlight Active Chip
         document.querySelectorAll('.chip-date').forEach(c => c.classList.remove('active'));
@@ -226,6 +230,7 @@ window.OperativoModule = {
     },
 
     setMode: function(mode) {
+        if (this.activeMode === mode) return;
         this.activeMode = mode;
         
         // Update Chips UI
@@ -276,6 +281,10 @@ window.OperativoModule = {
 
     openDashboard: async function(mode) {
         if (mode === 'convocation' && !this.activeEvent) return;
+        if (mode !== 'convocation' && !this.activeEvent) {
+            this.setDashboardEmpty('Selecciona una fecha para continuar.');
+            return;
+        }
 
         this.dashboardMode = mode;
         const requestId = ++this.dashboardRequestId;
