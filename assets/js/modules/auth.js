@@ -86,28 +86,29 @@ window.AuthModule = {
         const isIndex = path.endsWith('index.html') || path.endsWith('/');
         const isLogin = path.endsWith('login.html');
 
+        // Only redirect if we are at root or login (Gateway Logic)
         if (!isIndex && !isLogin) return false;
 
         const roleRoutes = this.getRoleRoutes();
-
         const target = roleRoutes[role];
-        console.log(`AuthModule: Role '${role}' maps to '${target}'`);
+        
+        console.log(`[Auth] Check Redirect: Role='${role}' -> Target='${target}'`);
 
         if (target) {
             const resolvedTarget = this.resolvePath(target);
-            // Prevent infinite redirect loop if already on target
-            // We check against the resolved target (relative) and current path
-            // Simple check: if path ends with the target file/folder
-            if (path.endsWith(target) || (target === 'index.html' && path.endsWith('/'))) {
-                console.log('AuthModule: Already on target page. No redirect.');
-                return true;
+            
+            // Avoid circular redirect
+            if (path.endsWith(target) || (target === 'index.html' && path === '/')) {
+                console.log('[Auth] Already on target path. Aborting redirect.');
+                return true; 
             }
             
-            console.log(`AuthModule: Redirecting to '${resolvedTarget}'`);
+            console.log(`[Auth] Redirecting to: ${resolvedTarget}`);
             window.location.replace(resolvedTarget);
             return true;
         }
 
+        console.warn(`[Auth] No route defined for role: ${role}`);
         return false;
     },
 

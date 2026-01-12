@@ -10,5 +10,6 @@ if (typeof window.supabase !== 'undefined') {
     console.log('Supabase Client Initialized as window.sb');
 } else {
     console.error('CRITICAL: Supabase library not found via CDN.');
-    alert('Error: No se pudo cargar Supabase. Verifique su conexión.');
+    // Apple HIG: Fail silently or show UI later, never alert() on load.
+    window.sysConfigError = 'No se pudo conectar con el servidor. Verifica tu conexión.';
 }
