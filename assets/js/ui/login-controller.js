@@ -8,11 +8,13 @@
     'use strict';
     
     // DOM Elements
-    const form = document.getElementById('loginForm');
-    const submitButton = document.getElementById('btn-submit');
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const loginButton = document.getElementById('btn-submit');
+    const registerButton = document.getElementById('btn-register');
     const messageContainer = document.getElementById('message');
     
-    if (!form || !submitButton || !messageContainer) {
+    if (!loginForm || !loginButton || !messageContainer) {
         console.error('Login UI Controller: Required DOM elements not found');
         return;
     }
@@ -30,16 +32,21 @@
      * Set loading state on submit button
      * @param {boolean} isLoading - Whether the form is currently submitting
      */
-    function setLoadingState(isLoading) {
-        if (isLoading) {
-            submitButton.classList.add('loading');
-            submitButton.setAttribute('aria-busy', 'true');
-            submitButton.disabled = true;
-        } else {
-            submitButton.classList.remove('loading');
-            submitButton.setAttribute('aria-busy', 'false');
-            submitButton.disabled = false;
+    function getActiveButton() {
+        if (registerForm && !registerForm.classList.contains('hidden') && registerButton) {
+            return registerButton;
         }
+        return loginButton;
+    }
+
+    function setLoadingState(isLoading) {
+        const activeButton = getActiveButton();
+        const buttons = [loginButton, registerButton].filter(Boolean);
+        buttons.forEach((button) => {
+            button.disabled = isLoading;
+            button.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+            button.classList.toggle('loading', isLoading && button === activeButton);
+        });
     }
     
     /**

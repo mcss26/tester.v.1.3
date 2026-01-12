@@ -26,6 +26,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginForm = document.getElementById("loginForm");
   const registerForm = document.getElementById("registerForm");
   const ui = window.LoginUI;
+  let isLoggingIn = false;
+  let isRegistering = false;
+  let areasLoaded = false;
+  let areasLoading = false;
 
   // --- UI Toggles ---
   const toggleRegisterBtn = document.getElementById('toggle-register');
@@ -40,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
           registerForm.classList.remove('hidden');
           loginActions.classList.add('hidden');
           registerActions.classList.remove('hidden');
-          if (ui) ui.clearMessage();
+          if (ui) { ui.clearMessage(); ui.setLoadingState(false); }
           loadAreas(); // Load areas when opening register
       });
   }
@@ -52,14 +56,23 @@ document.addEventListener("DOMContentLoaded", () => {
           loginForm.classList.remove('hidden');
           registerActions.classList.add('hidden');
           loginActions.classList.remove('hidden');
-          if (ui) ui.clearMessage();
+          if (ui) { ui.clearMessage(); ui.setLoadingState(false); }
       });
   }
 
   // --- Load Areas for Dropdown ---
   async function loadAreas() {
       const select = document.getElementById('reg-area');
-      if (!select || select.children.length > 1) return; // Already loaded
+      if (!select || areasLoaded || areasLoading) return;
+      areasLoading = true;
+
+      select.textContent = '';
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.disabled = true;
+      placeholder.selected = true;
+      placeholder.textContent = 'Selecciona tu área';
+      select.appendChild(placeholder);
 
       try {
           if (!window.sb) throw new Error('Supabase no inicializado');
@@ -74,9 +87,12 @@ document.addEventListener("DOMContentLoaded", () => {
               opt.dataset.name = area.name;
               select.appendChild(opt);
           });
+          areasLoaded = true;
       } catch (err) {
           console.error('Error loading areas:', err);
           if (ui) ui.showMessage('Error al cargar áreas.', 'error');
+      } finally {
+          areasLoading = false;
       }
   }
 
@@ -85,6 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (loginForm) {
     loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
+      if (isLoggingIn) return;
       
       // Use UI Controller if available
       if (ui) {
@@ -95,11 +112,13 @@ document.addEventListener("DOMContentLoaded", () => {
       // 1. Check System State (Apple HIG: Early Feedback)
       if (window.sysConfigError) {
           if (ui) ui.showMessage(window.sysConfigError, 'error');
+          if (ui) ui.setLoadingState(false);
           return;
       }
 
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
+      isLoggingIn = true;
       
       try {
           if (!window.sb) {
@@ -160,6 +179,9 @@ document.addEventListener("DOMContentLoaded", () => {
               // Fallback for extreme cases where UI also failed
               console.error("UI Module missing, cannot show error to user:", message);
           }
+      } finally {
+          isLoggingIn = false;
+          if (ui) ui.setLoadingState(false);
       }
     });
   }
@@ -168,7 +190,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (registerForm) {
       registerForm.addEventListener("submit", async (e) => {
           e.preventDefault();
-          if (ui) { ui.clearMessage(); ui.setLoadingState(true); }
+          if (isRegistering) return;
+          if (ui) { ui.clearMessage(); }
 
           const email = document.getElementById('reg-email').value.trim();
           const pass = document.getElementById('reg-password').value;
@@ -187,6 +210,8 @@ document.addEventListener("DOMContentLoaded", () => {
           }
 
           try {
+              isRegistering = true;
+              if (ui) { ui.setLoadingState(true); }
               if (!window.sb) throw new Error('Sistema no inicializado.');
 
               // 1. SignUp
@@ -230,6 +255,9 @@ document.addEventListener("DOMContentLoaded", () => {
               console.error("Register Error:", err);
               const message = getLoginErrorMessage(err); // reuse msg parser
               if (ui) ui.showMessage(message, 'error');
+          } finally {
+              isRegistering = false;
+              if (ui) ui.setLoadingState(false);
           }
       });
   }
