@@ -7,6 +7,9 @@ window.OperativoModule = {
     session: null,
     profile: null,
     activeEvent: null,
+    stockItems: [],
+    stockFilter: 'active',
+    analysisTab: 'importar',
 
     init: async function() {
         console.log('OperativoModule init...');
@@ -36,15 +39,15 @@ window.OperativoModule = {
         });
         
         document.getElementById('btn-stock-check')?.addEventListener('click', () => {
-            window.location.href = './operativo-stock.html';
+            this.openDashboard('stock');
         });
 
         document.getElementById('btn-requests')?.addEventListener('click', () => {
-            alert('Módulo Solicitudes: Próximamente');
+            this.openDashboard('requests');
         });
 
         document.getElementById('btn-load-consumption')?.addEventListener('click', () => {
-            window.location.href = '../herramientas/herramientas-analisis.html';
+            this.openDashboard('analysis');
         });
         
         // Close Dashboard
@@ -144,19 +147,802 @@ window.OperativoModule = {
     },
 
     openDashboard: async function(mode) {
-        if (!this.activeEvent) return;
+        if (mode === 'convocation' && !this.activeEvent) return;
 
         const dashboard = document.getElementById('staff-dashboard');
-        const title = document.getElementById('dashboard-title');
         const listContainer = document.getElementById('content-list');
+        if (!dashboard || !listContainer) return;
         
         dashboard.classList.remove('hidden');
-        listContainer.innerHTML = '<div style="text-align:center; padding:20px;">Cargando...</div>';
+        this.resetDashboard();
 
         if (mode === 'convocation') {
-            title.textContent = 'Convocar Equipo';
+            this.setDashboardTitle('Convocar Equipo');
+            this.setDashboardLoading('Cargando equipo...');
             await this.loadStaffForEvent(this.activeEvent.id);
+            return;
         }
+
+        if (mode === 'stock') {
+            this.stockFilter = 'active';
+            await this.loadStockOverview();
+            return;
+        }
+
+        if (mode === 'requests') {
+            await this.loadRequestsOverview();
+            return;
+        }
+
+        if (mode === 'analysis') {
+            await this.loadAnalysisOverview();
+        }
+    },
+
+    resetDashboard: function() {
+        const listContainer = document.getElementById('content-list');
+        if (listContainer) listContainer.textContent = '';
+        this.setDashboardSubtitle('');
+        this.hideAllocationSubtitle();
+        this.setDashboardToolbar(null);
+    },
+
+    setDashboardTitle: function(text) {
+        const title = document.getElementById('dashboard-title');
+        if (title) title.textContent = text;
+    },
+
+    setDashboardSubtitle: function(text) {
+        const subtitle = document.getElementById('dashboard-subtitle');
+        if (!subtitle) return;
+        if (text) {
+            subtitle.textContent = text;
+            subtitle.classList.remove('hidden');
+        } else {
+            subtitle.textContent = '';
+            subtitle.classList.add('hidden');
+        }
+    },
+
+    hideAllocationSubtitle: function() {
+        const subtitleEl = document.getElementById('allocation-subtitle');
+        if (subtitleEl) subtitleEl.style.display = 'none';
+    },
+
+    setDashboardToolbar: function(contentNode) {
+        const toolbar = document.getElementById('dashboard-toolbar');
+        if (!toolbar) return;
+        toolbar.textContent = '';
+        if (contentNode) {
+            toolbar.classList.remove('hidden');
+            toolbar.appendChild(contentNode);
+        } else {
+            toolbar.classList.add('hidden');
+        }
+    },
+
+    setDashboardLoading: function(message) {
+        const listContainer = document.getElementById('content-list');
+        if (!listContainer) return;
+        const text = message || 'Cargando...';
+        listContainer.innerHTML = `<div class="op-muted" style="text-align:center; padding:16px;">${text}</div>`;
+    },
+
+    setDashboardEmpty: function(message) {
+        const listContainer = document.getElementById('content-list');
+        if (!listContainer) return;
+        listContainer.innerHTML = `<div class="op-muted" style="text-align:center; padding:16px;">${message}</div>`;
+    },
+
+    loadStockOverview: async function() {
+        this.setDashboardTitle('Stock Check');
+        this.setDashboardSubtitle('Producto / Actual / Ideal / Sugerido / Packs');
+        this.setDashboardLoading('Cargando stock...');
+        if (!window.sb) {
+            this.setDashboardEmpty('No se pudo conectar con el servidor.');
+            return;
+        }
+
+        try {
+            const { data: skus, error: skuError } = await window.sb
+                .from('inventory_skus')
+                .select('id, name, ml, pack_quantity, is_active')
+                .order('name');
+
+            if (skuError) throw skuError;
+            if (!skus || skus.length === 0) {
+                this.setDashboardEmpty('No se encontraron productos.');
+                return;
+            }
+
+            const skuIds = skus.map(sku => sku.id);
+            let stocks = [];
+            if (skuIds.length) {
+                const { data: stockData, error: stockError } = await window.sb
+                    .from('inventory_stock')
+                    .select('sku_id, stock_actual, stock_ideal')
+                    .in('sku_id', skuIds);
+
+                if (stockError) throw stockError;
+                stocks = stockData || [];
+            }
+
+            const stockMap = new Map();
+            stocks.forEach(stock => stockMap.set(stock.sku_id, stock));
+
+            this.stockItems = skus.map(sku => {
+                const stockEntry = stockMap.get(sku.id) || {};
+                const actual = stockEntry.stock_actual || 0;
+                const ideal = stockEntry.stock_ideal || 0;
+                const packQty = sku.pack_quantity || 1;
+                const gap = Math.max(ideal - actual, 0);
+                const suggested = gap > 0 ? Math.ceil(gap / packQty) : 0;
+                const isActive = sku.is_active !== false;
+                return {
+                    id: sku.id,
+                    name: sku.name,
+                    unit: sku.ml ? `${sku.ml} ml` : '',
+                    packQty,
+                    is_active: isActive,
+                    actual,
+                    ideal,
+                    suggested
+                };
+            });
+
+            this.stockItems.sort((a, b) => {
+                if (b.suggested !== a.suggested) return b.suggested - a.suggested;
+                return a.name.localeCompare(b.name);
+            });
+
+            this.setDashboardToolbar(this.renderStockToolbar());
+            this.renderStockTable();
+        } catch (err) {
+            console.error('Error loading stock overview:', err);
+            this.setDashboardEmpty('No se pudo cargar el stock.');
+        }
+    },
+
+    renderStockToolbar: function() {
+        const activeCount = this.stockItems.filter(item => item.is_active).length;
+        const inactiveCount = this.stockItems.filter(item => !item.is_active).length;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'op-toolbar';
+
+        const tabs = document.createElement('div');
+        tabs.className = 'op-tabs';
+        tabs.appendChild(this.buildStockFilterButton('active', `Activos (${activeCount})`));
+        tabs.appendChild(this.buildStockFilterButton('inactive', `Descontinuados (${inactiveCount})`));
+        wrapper.appendChild(tabs);
+
+        const actions = document.createElement('div');
+        actions.style.display = 'flex';
+        actions.style.alignItems = 'center';
+        actions.style.gap = '8px';
+
+        const meta = document.createElement('div');
+        meta.className = 'op-muted';
+        meta.textContent = `Total: ${this.stockItems.length}`;
+        actions.appendChild(meta);
+
+        const refresh = document.createElement('button');
+        refresh.type = 'button';
+        refresh.className = 'glass-button op-tab-btn';
+        refresh.textContent = 'Actualizar';
+        refresh.addEventListener('click', () => this.loadStockOverview());
+        actions.appendChild(refresh);
+
+        wrapper.appendChild(actions);
+
+        return wrapper;
+    },
+
+    buildStockFilterButton: function(filter, label) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'glass-button op-tab-btn';
+        btn.textContent = label;
+        btn.classList.toggle('active', this.stockFilter === filter);
+        btn.addEventListener('click', () => {
+            this.stockFilter = filter;
+            this.setDashboardToolbar(this.renderStockToolbar());
+            this.renderStockTable();
+        });
+        return btn;
+    },
+
+    renderStockTable: function() {
+        const listContainer = document.getElementById('content-list');
+        if (!listContainer) return;
+        listContainer.textContent = '';
+
+        const panel = document.createElement('div');
+        panel.className = 'op-panel';
+
+        const filtered = this.stockItems.filter(item => {
+            if (this.stockFilter === 'inactive') return !item.is_active;
+            return item.is_active;
+        });
+
+        if (!filtered.length) {
+            const empty = document.createElement('p');
+            empty.className = 'op-muted';
+            empty.textContent = 'No hay productos para este filtro.';
+            panel.appendChild(empty);
+            listContainer.appendChild(panel);
+            return;
+        }
+
+        const scroll = document.createElement('div');
+        scroll.className = 'op-scroll';
+
+        const table = document.createElement('table');
+        table.className = 'op-table';
+
+        const thead = document.createElement('thead');
+        const headRow = document.createElement('tr');
+        ['Producto', 'Actual', 'Ideal', 'Sugerido', 'Packs'].forEach(label => {
+            const th = document.createElement('th');
+            th.textContent = label;
+            headRow.appendChild(th);
+        });
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        filtered.forEach(item => {
+            const row = document.createElement('tr');
+            if (item.suggested > 0) row.classList.add('is-low');
+
+            const nameCell = document.createElement('td');
+            const name = document.createElement('div');
+            name.textContent = item.name;
+            nameCell.appendChild(name);
+            if (item.unit) {
+                const unit = document.createElement('div');
+                unit.className = 'op-muted';
+                unit.textContent = item.unit;
+                nameCell.appendChild(unit);
+            }
+            if (!item.is_active) {
+                const badge = document.createElement('span');
+                badge.className = 'op-status-pill op-status-other';
+                badge.textContent = 'Descontinuado';
+                nameCell.appendChild(badge);
+            }
+            row.appendChild(nameCell);
+
+            row.appendChild(this.buildOpCell(item.actual, true));
+            row.appendChild(this.buildOpCell(item.ideal, true));
+            row.appendChild(this.buildOpCell(item.suggested || '-', true));
+            row.appendChild(this.buildOpCell(item.packQty, true));
+
+            tbody.appendChild(row);
+        });
+        table.appendChild(tbody);
+        scroll.appendChild(table);
+        panel.appendChild(scroll);
+        listContainer.appendChild(panel);
+    },
+
+    loadRequestsOverview: async function() {
+        this.setDashboardTitle('Solicitudes');
+        this.setDashboardSubtitle('Pendientes, aprobadas, en reposición y completadas.');
+        this.setDashboardToolbar(this.buildActionToolbar('Actualizar', () => this.loadRequestsOverview()));
+        this.setDashboardLoading('Cargando solicitudes...');
+        if (!window.sb) {
+            this.setDashboardEmpty('No se pudo conectar con el servidor.');
+            return;
+        }
+
+        try {
+            const { data: requests, error } = await window.sb
+                .from('replenishment_requests')
+                .select(`
+                    id,
+                    status,
+                    operational_date,
+                    created_at,
+                    replenishment_items (
+                        id,
+                        requested_packs,
+                        is_deleted,
+                        inventory_skus ( name, pack_quantity )
+                    )
+                `)
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (error) throw error;
+            this.renderRequestsOverview(requests || []);
+        } catch (err) {
+            console.error('Error loading requests:', err);
+            this.setDashboardEmpty('No se pudieron cargar las solicitudes.');
+        }
+    },
+
+    renderRequestsOverview: function(requests) {
+        const listContainer = document.getElementById('content-list');
+        if (!listContainer) return;
+        listContainer.textContent = '';
+
+        const statusConfig = {
+            pending: { label: 'Pendientes', pill: 'op-status-pending' },
+            approved: { label: 'Aprobadas', pill: 'op-status-approved' },
+            in_replenishment: { label: 'En reposición', pill: 'op-status-inreplenishment' },
+            completed: { label: 'Completadas', pill: 'op-status-completed' },
+            other: { label: 'Otros', pill: 'op-status-other' }
+        };
+
+        const groups = {
+            pending: [],
+            approved: [],
+            in_replenishment: [],
+            completed: [],
+            other: []
+        };
+
+        requests.forEach(req => {
+            const status = req.status || 'other';
+            if (groups[status]) groups[status].push(req);
+            else groups.other.push(req);
+        });
+
+        const groupOrder = ['pending', 'approved', 'in_replenishment', 'completed', 'other'];
+        groupOrder.forEach(key => {
+            const groupItems = groups[key];
+
+            const panel = document.createElement('div');
+            panel.className = 'op-panel';
+
+            const heading = document.createElement('h4');
+            heading.className = 'op-heading';
+            heading.textContent = `${statusConfig[key].label} (${groupItems.length})`;
+            panel.appendChild(heading);
+
+            const list = document.createElement('div');
+            list.className = 'op-chart';
+
+            if (!groupItems.length) {
+                const empty = document.createElement('p');
+                empty.className = 'op-muted';
+                empty.textContent = 'Sin solicitudes en este estado.';
+                list.appendChild(empty);
+            }
+
+            groupItems.forEach(req => {
+                const detail = document.createElement('details');
+                detail.className = 'op-detail';
+
+                const summary = document.createElement('summary');
+                const left = document.createElement('div');
+                left.style.display = 'flex';
+                left.style.flexDirection = 'column';
+                left.style.gap = '6px';
+
+                const title = document.createElement('div');
+                title.className = 'op-detail-title';
+                title.textContent = `Solicitud #${String(req.id).slice(0, 8)}`;
+                left.appendChild(title);
+
+                const meta = document.createElement('div');
+                meta.className = 'op-detail-meta';
+                meta.appendChild(this.buildMetaItem('Operativa', req.operational_date || '-'));
+
+                const items = (req.replenishment_items || []).filter(item => !item.is_deleted);
+                const totalPacks = items.reduce((sum, item) => sum + (item.requested_packs || 0), 0);
+                meta.appendChild(this.buildMetaItem('Items', items.length));
+                meta.appendChild(this.buildMetaItem('Packs', totalPacks));
+                left.appendChild(meta);
+
+                const statusPill = document.createElement('span');
+                statusPill.className = `op-status-pill ${statusConfig[key].pill}`;
+                statusPill.textContent = statusConfig[key].label;
+
+                summary.appendChild(left);
+                summary.appendChild(statusPill);
+                detail.appendChild(summary);
+
+                const body = document.createElement('div');
+                body.className = 'op-detail-body';
+
+                if (!items.length) {
+                    const empty = document.createElement('p');
+                    empty.className = 'op-muted';
+                    empty.textContent = 'Sin items activos en esta solicitud.';
+                    body.appendChild(empty);
+                } else {
+                    const table = document.createElement('table');
+                    table.className = 'op-table';
+                    const thead = document.createElement('thead');
+                    const headRow = document.createElement('tr');
+                    ['Producto', 'Packs', 'Unidades'].forEach(label => {
+                        const th = document.createElement('th');
+                        th.textContent = label;
+                        headRow.appendChild(th);
+                    });
+                    thead.appendChild(headRow);
+                    table.appendChild(thead);
+
+                    const tbody = document.createElement('tbody');
+                    items.forEach(item => {
+                        const row = document.createElement('tr');
+                        const packQty = item.inventory_skus?.pack_quantity || 1;
+                        const units = (item.requested_packs || 0) * packQty;
+                        row.appendChild(this.buildTextCell(item.inventory_skus?.name || 'Producto'));
+                        row.appendChild(this.buildTextCell(item.requested_packs || 0));
+                        row.appendChild(this.buildTextCell(units));
+                        tbody.appendChild(row);
+                    });
+                    table.appendChild(tbody);
+                    body.appendChild(table);
+                }
+
+                detail.appendChild(body);
+                list.appendChild(detail);
+            });
+
+            panel.appendChild(list);
+            listContainer.appendChild(panel);
+        });
+
+        if (!listContainer.children.length) {
+            this.setDashboardEmpty('No hay solicitudes para mostrar.');
+        }
+    },
+
+    loadAnalysisOverview: async function() {
+        this.setDashboardTitle('Análisis de Consumo');
+        this.setDashboardSubtitle('Importar, analizar e histórico mensual.');
+        this.setDashboardToolbar(null);
+        this.analysisTab = 'importar';
+        if (!window.sb) {
+            this.setDashboardEmpty('No se pudo conectar con el servidor.');
+            return;
+        }
+
+        const listContainer = document.getElementById('content-list');
+        if (!listContainer) return;
+        listContainer.textContent = '';
+
+        const panel = document.createElement('div');
+        panel.className = 'op-panel';
+
+        const tabs = document.createElement('div');
+        tabs.className = 'op-tabs';
+        const tabList = [
+            { id: 'importar', label: 'Importar' },
+            { id: 'analizar', label: 'Análisis' },
+            { id: 'historico', label: 'Histórico' }
+        ];
+
+        tabList.forEach(tab => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'glass-button op-tab-btn';
+            btn.textContent = tab.label;
+            btn.classList.toggle('active', this.analysisTab === tab.id);
+            btn.addEventListener('click', () => {
+                this.analysisTab = tab.id;
+                this.showAnalysisTab(tab.id);
+                tabs.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+            tabs.appendChild(btn);
+        });
+        panel.appendChild(tabs);
+
+        const importarPanel = this.buildAnalysisImportPanel();
+        const analizarPanel = this.buildAnalysisSummaryPanel();
+        const historicoPanel = this.buildAnalysisHistoryPanel();
+
+        panel.appendChild(importarPanel);
+        panel.appendChild(analizarPanel);
+        panel.appendChild(historicoPanel);
+        listContainer.appendChild(panel);
+
+        this.showAnalysisTab(this.analysisTab);
+        this.loadAnalysisSummary(analizarPanel);
+        this.loadHistorySummary(historicoPanel);
+    },
+
+    buildAnalysisImportPanel: function() {
+        const panel = document.createElement('div');
+        panel.className = 'op-tab-panel';
+        panel.dataset.tab = 'importar';
+
+        const title = document.createElement('h4');
+        title.className = 'op-heading';
+        title.textContent = 'Importar Consumos';
+        panel.appendChild(title);
+
+        const info = document.createElement('p');
+        info.className = 'op-muted';
+        info.textContent = 'Carga tu archivo Excel en el módulo completo para validar y registrar consumos.';
+        panel.appendChild(info);
+
+        const openBtn = document.createElement('button');
+        openBtn.type = 'button';
+        openBtn.className = 'glass-button op-tab-btn';
+        openBtn.textContent = 'Abrir módulo completo';
+        openBtn.addEventListener('click', () => {
+            window.location.href = '../herramientas/herramientas-analisis.html';
+        });
+        panel.appendChild(openBtn);
+
+        return panel;
+    },
+
+    buildAnalysisSummaryPanel: function() {
+        const panel = document.createElement('div');
+        panel.className = 'op-tab-panel hidden';
+        panel.dataset.tab = 'analizar';
+
+        const title = document.createElement('h4');
+        title.className = 'op-heading';
+        title.textContent = 'Resumen Operativo';
+        panel.appendChild(title);
+
+        const container = document.createElement('div');
+        container.className = 'op-summary-grid';
+        container.innerHTML = `
+            <div class="op-summary-card">
+                <p class="op-summary-label">Reportes 30d</p>
+                <p class="op-summary-value" data-summary="reports">-</p>
+            </div>
+            <div class="op-summary-card">
+                <p class="op-summary-label">Consumo total</p>
+                <p class="op-summary-value" data-summary="total">-</p>
+            </div>
+            <div class="op-summary-card">
+                <p class="op-summary-label">Última carga</p>
+                <p class="op-summary-value" data-summary="latest">-</p>
+            </div>
+        `;
+        panel.appendChild(container);
+
+        return panel;
+    },
+
+    buildAnalysisHistoryPanel: function() {
+        const panel = document.createElement('div');
+        panel.className = 'op-tab-panel hidden';
+        panel.dataset.tab = 'historico';
+
+        const title = document.createElement('h4');
+        title.className = 'op-heading';
+        title.textContent = 'Histórico Mensual';
+        panel.appendChild(title);
+
+        const monthLabel = document.createElement('p');
+        monthLabel.className = 'op-muted';
+        monthLabel.dataset.historyMonth = 'true';
+        monthLabel.textContent = 'Mes actual';
+        panel.appendChild(monthLabel);
+
+        const chart = document.createElement('div');
+        chart.className = 'op-chart';
+        chart.dataset.chart = 'history';
+        panel.appendChild(chart);
+
+        const tableWrap = document.createElement('div');
+        tableWrap.className = 'op-scroll';
+        const table = document.createElement('table');
+        table.className = 'op-table';
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Unidades</th>
+                    <th>Costo</th>
+                    <th>Recaudación</th>
+                </tr>
+            </thead>
+            <tbody data-history-table></tbody>
+        `;
+        tableWrap.appendChild(table);
+        panel.appendChild(tableWrap);
+
+        const note = document.createElement('p');
+        note.className = 'op-muted';
+        note.textContent = 'Costo y recaudación: en desarrollo.';
+        panel.appendChild(note);
+
+        return panel;
+    },
+
+    showAnalysisTab: function(tabId) {
+        const panels = document.querySelectorAll('#content-list [data-tab]');
+        panels.forEach(panel => {
+            panel.classList.toggle('hidden', panel.dataset.tab !== tabId);
+        });
+    },
+
+    loadAnalysisSummary: async function(panel) {
+        const reportsEl = panel.querySelector('[data-summary="reports"]');
+        const totalEl = panel.querySelector('[data-summary="total"]');
+        const latestEl = panel.querySelector('[data-summary="latest"]');
+        if (!reportsEl || !totalEl || !latestEl) return;
+        if (!window.sb) return;
+
+        try {
+            const since = this.getDateOffset(-30);
+            const { data: reports, error } = await window.sb
+                .from('consumption_reports')
+                .select('id, operational_date')
+                .gte('operational_date', since);
+
+            if (error) throw error;
+            if (!reports || !reports.length) {
+                reportsEl.textContent = '0';
+                totalEl.textContent = '0';
+                latestEl.textContent = '-';
+                return;
+            }
+
+            const reportIds = reports.map(rep => rep.id);
+            const latestDate = reports
+                .map(rep => rep.operational_date)
+                .sort()
+                .pop();
+
+            const { data: details, error: detailsError } = await window.sb
+                .from('consumption_details')
+                .select('quantity')
+                .in('report_id', reportIds);
+
+            if (detailsError) throw detailsError;
+            const total = (details || []).reduce((sum, item) => sum + (item.quantity || 0), 0);
+
+            reportsEl.textContent = reports.length;
+            totalEl.textContent = Math.round(total);
+            latestEl.textContent = latestDate || '-';
+        } catch (err) {
+            console.error('Error loading analysis summary:', err);
+            reportsEl.textContent = '-';
+            totalEl.textContent = '-';
+            latestEl.textContent = '-';
+        }
+    },
+
+    loadHistorySummary: async function(panel) {
+        const chart = panel.querySelector('[data-chart="history"]');
+        const tbody = panel.querySelector('[data-history-table]');
+        const monthLabel = panel.querySelector('[data-history-month="true"]');
+        if (!chart || !tbody) return;
+        if (!window.sb) return;
+
+        chart.innerHTML = '<p class="op-muted">Cargando diagrama...</p>';
+        tbody.innerHTML = '';
+
+        try {
+            const monthStart = this.getMonthStart();
+            const today = this.getDateOffset(0);
+            if (monthLabel) {
+                monthLabel.textContent = this.getMonthLabel(new Date());
+            }
+            const { data: reports, error } = await window.sb
+                .from('consumption_reports')
+                .select('id, operational_date')
+                .gte('operational_date', monthStart)
+                .lte('operational_date', today);
+
+            if (error) throw error;
+            if (!reports || !reports.length) {
+                chart.innerHTML = '<p class="op-muted">Sin consumos registrados este mes.</p>';
+                return;
+            }
+
+            const reportIds = reports.map(rep => rep.id);
+            const { data: details, error: detailsError } = await window.sb
+                .from('consumption_details')
+                .select('quantity, sku:inventory_skus(name)')
+                .in('report_id', reportIds);
+
+            if (detailsError) throw detailsError;
+            if (!details || !details.length) {
+                chart.innerHTML = '<p class="op-muted">Sin detalles disponibles.</p>';
+                return;
+            }
+
+            const totals = {};
+            details.forEach(item => {
+                const name = item.sku?.name || 'Producto';
+                totals[name] = (totals[name] || 0) + (item.quantity || 0);
+            });
+
+            const ranked = Object.entries(totals)
+                .map(([name, qty]) => ({ name, qty }))
+                .sort((a, b) => b.qty - a.qty);
+
+            const topItems = ranked.slice(0, 10);
+            const maxValue = topItems[0]?.qty || 1;
+
+            chart.textContent = '';
+            topItems.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'op-bar-row';
+
+                const label = document.createElement('span');
+                label.textContent = item.name;
+                row.appendChild(label);
+
+                const track = document.createElement('div');
+                track.className = 'op-bar-track';
+                const fill = document.createElement('div');
+                fill.className = 'op-bar-fill';
+                fill.style.width = `${Math.round((item.qty / maxValue) * 100)}%`;
+                track.appendChild(fill);
+                row.appendChild(track);
+
+                const value = document.createElement('span');
+                value.textContent = Math.round(item.qty);
+                row.appendChild(value);
+
+                chart.appendChild(row);
+            });
+
+            topItems.forEach(item => {
+                const row = document.createElement('tr');
+                row.appendChild(this.buildTextCell(item.name));
+                row.appendChild(this.buildTextCell(Math.round(item.qty)));
+                row.appendChild(this.buildTextCell('En desarrollo'));
+                row.appendChild(this.buildTextCell('En desarrollo'));
+                tbody.appendChild(row);
+            });
+        } catch (err) {
+            console.error('Error loading history summary:', err);
+            chart.innerHTML = '<p class="op-muted">No se pudo cargar el histórico.</p>';
+        }
+    },
+
+    buildMetaItem: function(label, value) {
+        const item = document.createElement('span');
+        item.className = 'op-muted';
+        item.textContent = `${label}: ${value}`;
+        return item;
+    },
+
+    buildActionToolbar: function(label, onClick) {
+        const toolbar = document.createElement('div');
+        toolbar.className = 'op-toolbar';
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'glass-button op-tab-btn';
+        button.textContent = label;
+        button.addEventListener('click', onClick);
+        toolbar.appendChild(button);
+        return toolbar;
+    },
+
+    buildOpCell: function(value, center) {
+        const cell = document.createElement('td');
+        cell.textContent = value;
+        if (center) cell.style.textAlign = 'center';
+        return cell;
+    },
+
+    buildTextCell: function(value) {
+        const cell = document.createElement('td');
+        cell.textContent = value;
+        return cell;
+    },
+
+    getDateOffset: function(days) {
+        const date = new Date();
+        date.setDate(date.getDate() + days);
+        return date.toISOString().slice(0, 10);
+    },
+
+    getMonthStart: function() {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        return start.toISOString().slice(0, 10);
+    },
+
+    getMonthLabel: function(date) {
+        return date.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
     },
 
     // --- Convocation Logic (Reused) ---
