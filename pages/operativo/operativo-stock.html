@@ -5,266 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Operativo - Midnight Club</title>
     <!-- Libs -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <!-- CSS (Operativo Theme) -->
     <link rel="stylesheet" href="../../assets/css/index.css">
-    <style>
-        /* Specific overrides for this page in Red Mode */
-        body {
-             background: radial-gradient(circle at 50% 30%, #5e0a0a 0%, #1a0000 60%, #000000 100%);
-             color: white;
-             min-height: 100vh;
-             padding: 20px;
-        }
-        .app-container {
-            max-width: 1200px; /* Widened for Desktop */
-            margin: 0 auto;
-        }
-        .content-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            gap: 16px;
-            margin-bottom: 18px;
-        }
-        .content-header h2 {
-            font-size: 32px;
-            letter-spacing: -0.02em;
-            margin: 0;
-        }
-        .content-header p {
-            margin: 6px 0 0;
-            color: rgba(255,255,255,0.6);
-            font-size: 14px;
-        }
-        /* Hide Layout Containers */
-        #sidebar-container, #header-container { display: none; }
-        
-        /* Card Styling to Match Glass */
-        .card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 24px;
-            padding: 24px;
-            margin-bottom: 20px;
-        }
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 16px;
-            margin-bottom: 12px;
-        }
-        .card-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .text-muted { color: rgba(255,255,255,0.6) !important; }
-        .text-danger { color: #FF3B30 !important; }
-        h2, h3 { color: white; margin-top: 0; }
-        
-        /* Back Button */
-        .back-btn {
-            display: inline-flex; align-items: center; gap: 8px;
-            background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 20px;
-            color: white; text-decoration: none; font-size: 14px; margin-bottom: 20px;
-            backdrop-filter: blur(10px); transition: all 0.2s;
-        }
-        .back-btn:hover { background: rgba(255,255,255,0.2); }
-
-        /* Tables */
-        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 10px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden; }
-        th { 
-            text-align: left; 
-            color: white; /* Better visibility */
-            opacity: 0.9; 
-            font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
-            border-bottom: 2px solid rgba(255,255,255,0.15); 
-            padding: 12px 8px; 
-            background: rgba(0,0,0,0.4); /* Slight bg for header */
-            position: sticky; top: 0; z-index: 10;
-        }
-        td { padding: 14px 8px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 15px; vertical-align: middle; }
-        .cell-center { text-align: center; }
-        tbody tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
-        tbody tr.is-low td { background: rgba(255, 59, 48, 0.06); }
-        tbody tr.is-selected td { background: rgba(255, 59, 48, 0.14); }
-        
-        /* Tabs */
-        .tab-container {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.12);
-            padding-bottom: 10px;
-            flex-wrap: wrap;
-        }
-        .tab-btn {
-            background: transparent; border: none; color: rgba(255,255,255,0.5);
-            padding: 10px 20px; font-size: 16px; cursor: pointer; border-bottom: 2px solid transparent;
-            font-weight: 500;
-        }
-        .tab-btn.active { color: white; border-bottom-color: #FF3B30; }
-
-        /* Inputs in Modal */
-        select, input { 
-            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 10px; border-radius: 8px;
-        }
-        
-        /* Modals */
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999;
-            display: flex; align-items: center; justify-content: center;
-            backdrop-filter: blur(5px);
-        }
-        .modal-card { 
-            background: #1c1c1e; border: 1px solid rgba(255,255,255,0.1); color: white;
-            width: 90%; max-width: 900px; border-radius: 16px; padding: 0; /* Removing padding from container */
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-            height: 85vh; /* Fixed height for consistency */
-            display: flex; flex-direction: column;
-            overflow: hidden;
-        }
-        .modal-header { 
-            padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.1); 
-            display: flex; justify-content: space-between; align-items: center;
-            background: #252528;
-            flex-shrink: 0;
-        }
-        .modal-header h3 { margin: 0; font-size: 20px; }
-        
-        .modal-body {
-            padding: 24px;
-            flex-grow: 1;
-            overflow-y: auto; /* Scrollable content */
-            display: flex; flex-direction: column; gap: 20px;
-        }
-
-        .modal-footer {
-            padding: 20px 24px; border-top: 1px solid rgba(255,255,255,0.1);
-            background: #252528;
-            display: flex; justify-content: flex-end; gap: 12px;
-            flex-shrink: 0;
-        }
-
-        /* Buttons matching Red Theme */
-        .btn-success {
-            background: #FF3B30; border: none; color: white; padding: 10px 20px;
-            border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
-        }
-        .btn-success:hover { background: #D70015; transform: scale(1.02); }
-        
-        .btn-secondary {
-            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white;
-            padding: 10px 20px; border-radius: 12px; font-weight: 500; cursor: pointer;
-        }
-        .btn-secondary:hover { background: rgba(255,255,255,0.2); }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .btn-icon { background: transparent; border: none; font-size: 24px; cursor: pointer; }
-
-        /* Badges */
-        .status-pill {
-            display: inline-flex; align-items: center; justify-content: center;
-            padding: 4px 10px; border-radius: 12px; font-size: 11px;
-            font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
-        }
-        .status-low { background: rgba(255, 59, 48, 0.2); color: #FF3B30; border: 1px solid rgba(255, 59, 48, 0.3); }
-        .status-excess { background: rgba(255, 149, 0, 0.2); color: #FF9500; border: 1px solid rgba(255, 149, 0, 0.3); }
-        .status-neutral { background: rgba(255, 255, 255, 0.1); color: rgba(255,255,255,0.6); }
-
-        /* Utilities */
-        .hidden { display: none !important; }
-        .table-scroll { overflow-x: auto; margin: 10px 0; max-height: 520px; overflow-y: auto; }
-        .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-        .form-actions.split { justify-content: space-between; }
-        .form-field { margin-bottom: 16px; }
-        .form-field label { display: block; font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 6px; }
-        input[type="number"] { width: 80px; text-align: center; }
-        .table-input { width: 70px; padding: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 6px; text-align: center; }
-        .table-input-full { width: 100%; padding: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 6px; }
-        .checkbox-lg { width: 18px; height: 18px; accent-color: #FF3B30; }
-
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
-            margin: 16px 0 8px;
-        }
-        .summary-card {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 16px;
-            padding: 14px 16px;
-        }
-        .summary-label {
-            margin: 0;
-            font-size: 11px;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.6);
-        }
-        .summary-value {
-            margin: 6px 0 2px;
-            font-size: 24px;
-            font-weight: 700;
-        }
-        .summary-sub {
-            margin: 0;
-            font-size: 12px;
-            color: rgba(255,255,255,0.55);
-        }
-
-        .modal-summary {
-            display: flex;
-            justify-content: space-between;
-            gap: 16px;
-            flex-wrap: wrap;
-            padding: 12px 14px;
-            border-radius: 12px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
-        }
-        .modal-summary p {
-            margin: 0;
-            font-size: 11px;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.6);
-        }
-        .modal-summary strong {
-            display: block;
-            margin-top: 6px;
-            font-size: 20px;
-            color: white;
-            letter-spacing: -0.01em;
-        }
-
-        .request-list { display: flex; flex-direction: column; gap: 12px; }
-        .request-card {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 16px;
-            padding: 16px;
-            border-radius: 16px;
-            border: 1px solid rgba(255,255,255,0.08);
-            background: rgba(255,255,255,0.04);
-        }
-        .request-meta { display: flex; flex-direction: column; gap: 6px; }
-        .request-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-
-        @media (max-width: 720px) {
-            .content-header { flex-direction: column; align-items: flex-start; }
-            .content-header h2 { font-size: 26px; }
-            .modal-card { width: 94%; height: 88vh; }
-        }
-
-    </style>
+    <link rel="stylesheet" href="../../assets/css/modules/operativo-stock.css">
 </head>
-<body>
+<body class="operativo-stock">
     <div class="app-container">
         <!-- Back Button -->
         <a href="operativo-index.html" class="back-btn">← Volver al Dashboard</a>
@@ -280,8 +26,8 @@
 
             <div id="content-operativo-stock">
                 <div class="tab-container">
-                    <button id="tab-btn-op-stock-actual" class="tab-btn active">Stock Actual (Solicitar)</button>
-                    <button id="tab-btn-op-stock-pending" class="tab-btn">Estado de Solicitudes</button>
+                    <button id="tab-btn-op-stock-actual" class="tab-btn active" type="button">Stock Actual (Solicitar)</button>
+                    <button id="tab-btn-op-stock-pending" class="tab-btn" type="button">Estado de Solicitudes</button>
                 </div>
 
                 <!-- Tab 1: Stock Actual (Request) -->
@@ -291,8 +37,8 @@
                             <h3>Stock Actual</h3>
                             <p class="text-muted">Se sugieren packs según Stock Ideal - Actual.</p>
                         </div>
-                        <div class="card-actions" style="margin-top:10px;">
-                            <button class="btn-success" id="btn-open-request">Solicitar faltantes</button>
+                        <div class="card-actions is-spaced">
+                            <button class="btn-success" id="btn-open-request" type="button">Solicitar faltantes</button>
                         </div>
                     </div>
                     <div class="summary-grid">
@@ -333,7 +79,7 @@
             <div class="modal-card modal-card-lg">
                 <div class="modal-header">
                     <h3>Confirmar Solicitud de Pedido</h3>
-                    <button type="button" class="btn-icon" id="btn-close-request-modal" aria-label="Cerrar" style="color:white;">&times;</button>
+                    <button type="button" class="btn-icon" id="btn-close-request-modal" aria-label="Cerrar">&times;</button>
                 </div>
                 
                 <div class="modal-body">
@@ -382,21 +128,9 @@
     </div>
 
     <!-- Scripts -->
-    <script src="../../assets/js/core/config.js"></script>
+    <script defer src="../../assets/js/core/config.js"></script>
     <!-- Removed LayoutModule injection since this is custom view -->
-    <script src="../../assets/js/modules/auth.js"></script>
-    <script src="../../assets/js/modules/operativo-stock.js"></script>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            if (window.AuthModule) await window.AuthModule.init();
-            // LayoutModule.injectLayout('operativo-stock'); // Disabled
-            
-            if (window.OperationalStockModule) {
-                window.OperationalStockModule.init();
-                window.OperationalStockModule.loadOpStockList();
-            }
-        });
-    </script>
+    <script defer src="../../assets/js/modules/auth.js"></script>
+    <script defer src="../../assets/js/modules/operativo-stock.js"></script>
 </body>
 </html>

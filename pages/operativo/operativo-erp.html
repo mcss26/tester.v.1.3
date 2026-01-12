@@ -13,17 +13,15 @@
 </head>
 <body class="welcome-screen" data-page="erp">
   <main class="center-content">
-    
-    <!-- Header / Nav -->
-    <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <button class="footer-link" onclick="window.location.href='operativo-index.html'" style="padding-left:0;">
-            &larr; Volver
-        </button>
-        <div style="text-align:right;">
-            <p id="user-name" style="margin:0; font-size:12px; font-weight:700; opacity:0.8;">...</p>
-            <p style="margin:0; font-size:10px; opacity:0.5;">ERP MODE</p>
-        </div>
-    </div>
+    <header class="operativo-header">
+      <a class="footer-link back-link" href="operativo-index.html">
+        &larr; Volver
+      </a>
+      <div class="operativo-user">
+        <p id="user-name" class="operativo-user-name">...</p>
+        <p class="operativo-user-mode">ERP MODE</p>
+      </div>
+    </header>
 
     <!-- Date Selection -->
     <section class="dates-section fade-in">
@@ -37,24 +35,24 @@
     <!-- Actions -->
     <section id="action-container" class="action-section hidden">
       <div class="actions-grid">
-        <button id="btn-open-convocation" class="action-card glass-button">
+        <button id="btn-open-convocation" class="action-card glass-button" type="button">
           <span class="action-label">Convocar</span>
         </button>
 
-        <button id="btn-stock-check" class="action-card glass-button">
+        <button id="btn-stock-check" class="action-card glass-button" type="button">
           <span class="action-label">Stock Check</span>
         </button>
 
-        <button id="btn-requests" class="action-card glass-button">
+        <button id="btn-requests" class="action-card glass-button" type="button">
           <span class="action-label">Solicitudes</span>
         </button>
 
-        <button id="btn-load-consumption" class="action-card glass-button">
+        <button id="btn-load-consumption" class="action-card glass-button" type="button">
           <span class="action-label">Cargar Consumos</span>
         </button>
 
         <!-- New SKU Button -->
-        <button id="btn-sku-list" class="action-card glass-button">
+        <button id="btn-sku-list" class="action-card glass-button" type="button">
             <span class="action-label">SKU</span>
         </button>
       </div>
@@ -64,13 +62,13 @@
     <section id="staff-dashboard" class="staff-dashboard hidden">
       <header class="dashboard-header">
         <div>
-          <h3 id="dashboard-title" style="margin:0; font-size:18px;">Dashboard</h3>
+          <h3 id="dashboard-title" class="dashboard-title">Dashboard</h3>
           <p id="dashboard-subtitle" class="dashboard-subtitle"></p>
-          <div id="allocation-subtitle" style="display:none; margin-top:4px;"></div>
+          <div id="allocation-subtitle" class="dashboard-allocation hidden"></div>
         </div>
         <div class="header-actions">
            <div id="dashboard-toolbar" class="hidden"></div>
-           <button class="btn-icon" id="btn-close-dashboard">&times;</button>
+           <button class="btn-icon" id="btn-close-dashboard" type="button" aria-label="Cerrar panel">&times;</button>
         </div>
       </header>
       <div id="content-list" class="staff-list"></div>
