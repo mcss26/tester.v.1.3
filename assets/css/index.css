@@ -40,8 +40,8 @@ body{
   display:flex;
   justify-content:center;
   align-items:center;
-  opacity:0;
-  animation:fadeIn 1.2s ease-out forwards;
+  opacity:1;
+  animation:fadeIn 1.2s ease-out both;
 }
 
 .operativo-home{
@@ -928,6 +928,10 @@ body{
 @keyframes slideUp{ from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
 @keyframes expand{ from{opacity:0;transform:scale(.95);} to{opacity:1;transform:scale(1);} }
 @keyframes shimmer{ 0%{transform:translateX(-100%);} 100%{transform:translateX(100%);} }
+
+@media (prefers-reduced-motion: reduce){
+  body{ animation:none; }
+}
 
 /* Responsive */
 @media (min-width:520px){
