@@ -162,6 +162,7 @@ window.OperationalStockModule = {
         });
 
         this.renderOpStockTable(this.operationalSkusCache);
+        this.updateSummary();
     },
 
     renderOpStockTable: function(items) {
@@ -188,6 +189,9 @@ window.OperationalStockModule = {
         items.forEach(item => {
             const isSelected = this.selectedForRequest.has(item.id);
             const row = document.createElement('tr');
+            row.dataset.skuId = item.id;
+            if (item.suggested > 0) row.classList.add('is-low');
+            if (isSelected) row.classList.add('is-selected');
 
             row.appendChild(this.buildCell(item.name));
             row.appendChild(this.buildCell(item.actual, 'center'));
@@ -244,6 +248,9 @@ window.OperationalStockModule = {
                 });
             }
         }
+        const row = document.querySelector(`tr[data-sku-id="${skuId}"]`);
+        if (row) row.classList.toggle('is-selected', this.selectedForRequest.has(skuId));
+        this.updateSummary();
     },
 
     openRequestModal: async function() {
@@ -336,14 +343,18 @@ window.OperationalStockModule = {
 
             tbody.appendChild(tr);
         });
+        this.updateRequestSummary();
     },
 
     updateRequestPack: function(skuId, value) {
         const entry = this.selectedForRequest.get(skuId);
         if (entry) {
-            entry.requested_packs = parseFloat(value);
+            const parsed = parseFloat(value);
+            entry.requested_packs = Number.isFinite(parsed) ? Math.max(1, parsed) : 1;
             this.selectedForRequest.set(skuId, entry);
         }
+        this.updateRequestSummary();
+        this.updateSummary();
     },
 
     updateRequestJustification: function(skuId, value) {
@@ -427,6 +438,38 @@ window.OperationalStockModule = {
             console.error('Unexpected error in submitReplenishmentRequest:', err);
             alert('Error inesperado: ' + err.message);
         }
+    },
+    updateSummary: function() {
+        const totalItems = this.operationalSkusCache.length;
+        const lowItems = this.operationalSkusCache.filter(item => item.suggested > 0).length;
+        const totalSuggested = this.operationalSkusCache.reduce((sum, item) => sum + (item.suggested || 0), 0);
+        const selectedCount = this.selectedForRequest.size;
+        const selectedPacks = Array.from(this.selectedForRequest.values())
+            .reduce((sum, entry) => sum + (parseFloat(entry.requested_packs) || 0), 0);
+
+        const totalEl = document.getElementById('op-summary-total');
+        if (totalEl) totalEl.textContent = totalItems;
+        const lowEl = document.getElementById('op-summary-low');
+        if (lowEl) lowEl.textContent = lowItems;
+        const suggestedEl = document.getElementById('op-summary-suggested');
+        if (suggestedEl) suggestedEl.textContent = totalSuggested;
+        const selectedEl = document.getElementById('op-summary-selected');
+        if (selectedEl) selectedEl.textContent = selectedCount;
+        const selectedPacksEl = document.getElementById('op-summary-selected-packs');
+        if (selectedPacksEl) selectedPacksEl.textContent = selectedPacks;
+
+        const openRequestBtn = document.getElementById('btn-open-request');
+        if (openRequestBtn) openRequestBtn.disabled = selectedCount === 0;
+    },
+    updateRequestSummary: function() {
+        const itemsCount = this.selectedForRequest.size;
+        const packsCount = Array.from(this.selectedForRequest.values())
+            .reduce((sum, entry) => sum + (parseFloat(entry.requested_packs) || 0), 0);
+
+        const itemsEl = document.getElementById('request-summary-items');
+        if (itemsEl) itemsEl.textContent = itemsCount;
+        const packsEl = document.getElementById('request-summary-packs');
+        if (packsEl) packsEl.textContent = packsCount;
     },
 
     loadOpPendingList: async function() {
