@@ -138,6 +138,30 @@ window.OperativoModule = {
         }
     },
 
+    // --- Event Caching ---
+    getCachedOpenEvents: function() {
+        const cached = localStorage.getItem('op_open_events');
+        if (!cached) return null;
+        try {
+            const parsed = JSON.parse(cached);
+            // Valid for 5 minutes
+            if (Date.now() - parsed.timestamp > 300000) {
+                localStorage.removeItem('op_open_events');
+                return null;
+            }
+            return { events: parsed.events, fresh: false };
+        } catch (e) {
+            return null;
+        }
+    },
+
+    setCachedOpenEvents: function(events) {
+        localStorage.setItem('op_open_events', JSON.stringify({
+            timestamp: Date.now(),
+            events: events
+        }));
+    },
+    
     loadOpenEvents: async function() {
         const chipsContainer = document.getElementById('date-chips');
         if (!chipsContainer) return;
@@ -148,7 +172,15 @@ window.OperativoModule = {
             this.renderOpenEvents(cached.events, chipsContainer);
         }
 
-        if (cached?.fresh) return;
+        if (cached?.fresh === false) { 
+             // If we have cached data but it's "stale-valid" (implied logic), 
+             // we might still want to re-fetch in background or just use it.
+             // For now, if we have valid cache, we stop unless we force fresh.
+             // But the original logic seemed to imply: result = cached. If present, render. If "fresh" (flag?), return.
+             // The implementation of getCachedOpenEvents above returns fresh: false effectively. 
+             // Let's assume user wants to avoid network if cache exists.
+             if (cached.events) return;
+        }
 
         const { data: events, error } = await window.sb
             .from('events')
