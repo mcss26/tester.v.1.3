@@ -10,6 +10,8 @@ window.OperativoModule = {
     stockItems: [],
     stockFilter: 'active',
     analysisTab: 'importar',
+    dashboardMode: null,
+    dashboardRequestId: 0,
 
     init: async function() {
         console.log('OperativoModule init...');
@@ -149,6 +151,9 @@ window.OperativoModule = {
     openDashboard: async function(mode) {
         if (mode === 'convocation' && !this.activeEvent) return;
 
+        this.dashboardMode = mode;
+        const requestId = ++this.dashboardRequestId;
+
         const dashboard = document.getElementById('staff-dashboard');
         const listContainer = document.getElementById('content-list');
         if (!dashboard || !listContainer) return;
@@ -159,23 +164,23 @@ window.OperativoModule = {
         if (mode === 'convocation') {
             this.setDashboardTitle('Convocar Equipo');
             this.setDashboardLoading('Cargando equipo...');
-            await this.loadStaffForEvent(this.activeEvent.id);
+            await this.loadStaffForEvent(this.activeEvent.id, requestId);
             return;
         }
 
         if (mode === 'stock') {
             this.stockFilter = 'active';
-            await this.loadStockOverview();
+            await this.loadStockOverview(requestId);
             return;
         }
 
         if (mode === 'requests') {
-            await this.loadRequestsOverview();
+            await this.loadRequestsOverview(requestId);
             return;
         }
 
         if (mode === 'analysis') {
-            await this.loadAnalysisOverview();
+            await this.loadAnalysisOverview(requestId);
         }
     },
 
@@ -234,7 +239,12 @@ window.OperativoModule = {
         listContainer.innerHTML = `<div class="op-muted" style="text-align:center; padding:16px;">${message}</div>`;
     },
 
-    loadStockOverview: async function() {
+    isDashboardRequestActive: function(requestId, mode) {
+        return this.dashboardRequestId === requestId && this.dashboardMode === mode;
+    },
+
+    loadStockOverview: async function(requestId) {
+        if (!this.isDashboardRequestActive(requestId, 'stock')) return;
         this.setDashboardTitle('Stock Check');
         this.setDashboardSubtitle('Producto / Actual / Ideal / Sugerido / Packs');
         this.setDashboardLoading('Cargando stock...');
@@ -270,6 +280,7 @@ window.OperativoModule = {
             const stockMap = new Map();
             stocks.forEach(stock => stockMap.set(stock.sku_id, stock));
 
+            if (!this.isDashboardRequestActive(requestId, 'stock')) return;
             this.stockItems = skus.map(sku => {
                 const stockEntry = stockMap.get(sku.id) || {};
                 const actual = stockEntry.stock_actual || 0;
@@ -295,11 +306,14 @@ window.OperativoModule = {
                 return a.name.localeCompare(b.name);
             });
 
+            if (!this.isDashboardRequestActive(requestId, 'stock')) return;
             this.setDashboardToolbar(this.renderStockToolbar());
             this.renderStockTable();
         } catch (err) {
             console.error('Error loading stock overview:', err);
-            this.setDashboardEmpty('No se pudo cargar el stock.');
+            if (this.isDashboardRequestActive(requestId, 'stock')) {
+                this.setDashboardEmpty('No se pudo cargar el stock.');
+            }
         }
     },
 
@@ -330,7 +344,7 @@ window.OperativoModule = {
         refresh.type = 'button';
         refresh.className = 'glass-button op-tab-btn';
         refresh.textContent = 'Actualizar';
-        refresh.addEventListener('click', () => this.loadStockOverview());
+        refresh.addEventListener('click', () => this.loadStockOverview(this.dashboardRequestId));
         actions.appendChild(refresh);
 
         wrapper.appendChild(actions);
@@ -426,10 +440,11 @@ window.OperativoModule = {
         listContainer.appendChild(panel);
     },
 
-    loadRequestsOverview: async function() {
+    loadRequestsOverview: async function(requestId) {
+        if (!this.isDashboardRequestActive(requestId, 'requests')) return;
         this.setDashboardTitle('Solicitudes');
         this.setDashboardSubtitle('Pendientes, aprobadas, en reposición y completadas.');
-        this.setDashboardToolbar(this.buildActionToolbar('Actualizar', () => this.loadRequestsOverview()));
+        this.setDashboardToolbar(this.buildActionToolbar('Actualizar', () => this.loadRequestsOverview(this.dashboardRequestId)));
         this.setDashboardLoading('Cargando solicitudes...');
         if (!window.sb) {
             this.setDashboardEmpty('No se pudo conectar con el servidor.');
@@ -455,10 +470,13 @@ window.OperativoModule = {
                 .limit(50);
 
             if (error) throw error;
+            if (!this.isDashboardRequestActive(requestId, 'requests')) return;
             this.renderRequestsOverview(requests || []);
         } catch (err) {
             console.error('Error loading requests:', err);
-            this.setDashboardEmpty('No se pudieron cargar las solicitudes.');
+            if (this.isDashboardRequestActive(requestId, 'requests')) {
+                this.setDashboardEmpty('No se pudieron cargar las solicitudes.');
+            }
         }
     },
 
@@ -592,7 +610,8 @@ window.OperativoModule = {
         }
     },
 
-    loadAnalysisOverview: async function() {
+    loadAnalysisOverview: async function(requestId) {
+        if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
         this.setDashboardTitle('Análisis de Consumo');
         this.setDashboardSubtitle('Importar, analizar e histórico mensual.');
         this.setDashboardToolbar(null);
@@ -643,8 +662,8 @@ window.OperativoModule = {
         listContainer.appendChild(panel);
 
         this.showAnalysisTab(this.analysisTab);
-        this.loadAnalysisSummary(analizarPanel);
-        this.loadHistorySummary(historicoPanel);
+        this.loadAnalysisSummary(analizarPanel, requestId);
+        this.loadHistorySummary(historicoPanel, requestId);
     },
 
     buildAnalysisImportPanel: function() {
@@ -759,12 +778,13 @@ window.OperativoModule = {
         });
     },
 
-    loadAnalysisSummary: async function(panel) {
+    loadAnalysisSummary: async function(panel, requestId) {
         const reportsEl = panel.querySelector('[data-summary="reports"]');
         const totalEl = panel.querySelector('[data-summary="total"]');
         const latestEl = panel.querySelector('[data-summary="latest"]');
         if (!reportsEl || !totalEl || !latestEl) return;
         if (!window.sb) return;
+        if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
 
         try {
             const since = this.getDateOffset(-30);
@@ -774,6 +794,7 @@ window.OperativoModule = {
                 .gte('operational_date', since);
 
             if (error) throw error;
+            if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
             if (!reports || !reports.length) {
                 reportsEl.textContent = '0';
                 totalEl.textContent = '0';
@@ -793,6 +814,7 @@ window.OperativoModule = {
                 .in('report_id', reportIds);
 
             if (detailsError) throw detailsError;
+            if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
             const total = (details || []).reduce((sum, item) => sum + (item.quantity || 0), 0);
 
             reportsEl.textContent = reports.length;
@@ -806,12 +828,13 @@ window.OperativoModule = {
         }
     },
 
-    loadHistorySummary: async function(panel) {
+    loadHistorySummary: async function(panel, requestId) {
         const chart = panel.querySelector('[data-chart="history"]');
         const tbody = panel.querySelector('[data-history-table]');
         const monthLabel = panel.querySelector('[data-history-month="true"]');
         if (!chart || !tbody) return;
         if (!window.sb) return;
+        if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
 
         chart.innerHTML = '<p class="op-muted">Cargando diagrama...</p>';
         tbody.innerHTML = '';
@@ -829,6 +852,7 @@ window.OperativoModule = {
                 .lte('operational_date', today);
 
             if (error) throw error;
+            if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
             if (!reports || !reports.length) {
                 chart.innerHTML = '<p class="op-muted">Sin consumos registrados este mes.</p>';
                 return;
@@ -841,6 +865,7 @@ window.OperativoModule = {
                 .in('report_id', reportIds);
 
             if (detailsError) throw detailsError;
+            if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
             if (!details || !details.length) {
                 chart.innerHTML = '<p class="op-muted">Sin detalles disponibles.</p>';
                 return;
@@ -947,7 +972,8 @@ window.OperativoModule = {
 
     // --- Convocation Logic (Reused) ---
 
-    loadStaffForEvent: async function(eventId) {
+    loadStaffForEvent: async function(eventId, requestId) {
+        if (!this.isDashboardRequestActive(requestId, 'convocation')) return;
         const listContainer = document.getElementById('content-list');
         
         // 1. Determine Area (From Profile)
@@ -966,12 +992,13 @@ window.OperativoModule = {
             .eq('area_id', areaId)
             .eq('is_active', true);
 
+        if (!this.isDashboardRequestActive(requestId, 'convocation')) return;
         if (!staffUsers || staffUsers.length === 0) {
              listContainer.innerHTML = '<p>No hay personal disponible en tu área.</p>';
         }
 
         // Calculate Requirements in parallel
-        this.calculateRequiredStaff(eventId, areaId);
+        this.calculateRequiredStaff(eventId, areaId, requestId);
 
         // 3. Fetch Convocations
         const { data: convocations } = await window.sb
@@ -996,7 +1023,8 @@ window.OperativoModule = {
         }
     },
 
-    calculateRequiredStaff: async function(eventId, areaId) {
+    calculateRequiredStaff: async function(eventId, areaId, requestId) {
+        if (!this.isDashboardRequestActive(requestId, 'convocation')) return;
         const countEl = document.getElementById('required-count');
         const subtitleEl = document.getElementById('allocation-subtitle');
         if (!countEl) return;
@@ -1017,6 +1045,7 @@ window.OperativoModule = {
             .from('staff_allocations')
             .select('quantity, position_id, area_id')
             .eq('event_id', eventId);
+        if (!this.isDashboardRequestActive(requestId, 'convocation')) return;
             
         let total = 0;
         if (allocations) {
