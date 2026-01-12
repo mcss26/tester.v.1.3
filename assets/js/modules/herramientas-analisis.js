@@ -453,6 +453,11 @@ window.confirmImport = async function() {
         document.getElementById('import-file').value = ''
         const fileNameEl = document.getElementById('import-file-name')
         if (fileNameEl) fileNameEl.textContent = ''
+        try {
+            window.sessionStorage.removeItem('analysis-ideal-cache-v1')
+        } catch (err) {
+            // ignore storage errors
+        }
     }
 }
 
@@ -510,7 +515,6 @@ window.analyzeIdealStock = async function() {
     }
 
     // 3. Process Logic: Average Consumption
-    window.currentAnalysisResults = [] // Store for bulk update
 
     const skuMap = {}
     details.forEach(d => {
@@ -534,21 +538,12 @@ window.analyzeIdealStock = async function() {
 
     summary.appendChild(buildAnalysisStat('Días analizados', daysCount))
     summary.appendChild(buildAnalysisStat('Productos', Object.keys(skuMap).length))
-    const bulkBtn = document.createElement('button')
-    bulkBtn.type = 'button'
-    bulkBtn.className = 'btn-success'
-    bulkBtn.textContent = 'Fijar todos los ideales'
-    bulkBtn.addEventListener('click', window.updateAllStockIdeal)
-    const actionWrap = document.createElement('div')
-    actionWrap.className = 'analysis-summary-actions'
-    actionWrap.appendChild(bulkBtn)
-    summary.appendChild(actionWrap)
     container.appendChild(summary)
 
     const table = document.createElement('table')
     const thead = document.createElement('thead')
     const headRow = document.createElement('tr')
-    ;['Producto', 'Consumo Promedio', 'Sugerido (Redondeado)', 'Acción'].forEach(label => {
+    ;['Producto', 'Consumo Promedio', 'Ideal 500', 'Ideal 900'].forEach(label => {
         const th = document.createElement('th')
         th.textContent = label
         headRow.appendChild(th)
@@ -559,28 +554,22 @@ window.analyzeIdealStock = async function() {
     const tbody = document.createElement('tbody')
     for (const [id, data] of Object.entries(skuMap)) {
         const avg = (data.totalQty / daysCount)
-        const rounded = Math.ceil(avg)
-        
-        // Save to global
-        window.currentAnalysisResults.push({ sku_id: id, ideal: rounded })
+        const ideal500 = Math.ceil(avg)
+        const ideal900 = Math.ceil(avg * (900 / 500))
 
         const row = document.createElement('tr')
         row.appendChild(buildCell(data.name))
         row.appendChild(buildCell(avg.toFixed(2)))
 
         const idealCell = document.createElement('td')
-        idealCell.textContent = rounded
+        idealCell.textContent = ideal500
         idealCell.className = 'analysis-ideal'
         row.appendChild(idealCell)
 
-        const actionCell = document.createElement('td')
-        const actionBtn = document.createElement('button')
-        actionBtn.type = 'button'
-        actionBtn.className = 'btn-secondary'
-        actionBtn.textContent = 'Fijar Individual'
-        actionBtn.addEventListener('click', () => window.updateStockIdeal(id, rounded))
-        actionCell.appendChild(actionBtn)
-        row.appendChild(actionCell)
+        const ideal2Cell = document.createElement('td')
+        ideal2Cell.textContent = ideal900
+        ideal2Cell.className = 'analysis-ideal'
+        row.appendChild(ideal2Cell)
 
         tbody.appendChild(row)
     }
@@ -590,46 +579,6 @@ window.analyzeIdealStock = async function() {
     tableWrap.className = 'analysis-preview'
     tableWrap.appendChild(table)
     container.appendChild(tableWrap)
-}
-
-window.updateAllStockIdeal = async function() {
-    if (!window.currentAnalysisResults || window.currentAnalysisResults.length === 0) return
-    if (!confirm(`¿Actualizar el Stock Ideal de ${window.currentAnalysisResults.length} productos?`)) return
-    if (!sb) {
-        alert('No se pudo conectar con Supabase.')
-        return
-    }
-
-    const updates = window.currentAnalysisResults.map(item => ({
-        sku_id: item.sku_id,
-        stock_ideal: item.ideal
-    }))
-
-    const { error } = await sb
-        .from('inventory_stock')
-        .upsert(updates, { onConflict: 'sku_id' })
-
-    if (error) {
-        alert('Error al actualizar masivamente: ' + error.message)
-    } else {
-        alert('Todos los Stocks Ideales han sido actualizados exitosamente.')
-    }
-}
-
-window.updateStockIdeal = async function(skuId, value) {
-    if (!confirm(`¿Actualizar Stock Ideal a ${value}?`)) return
-    if (!sb) {
-        alert('No se pudo conectar con Supabase.')
-        return
-    }
-    
-    // Upsert into inventory_stock
-    const { error } = await sb
-        .from('inventory_stock')
-        .upsert({ sku_id: skuId, stock_ideal: value }, { onConflict: 'sku_id' })
-
-    if (error) alert('Error: ' + error.message)
-    else alert('Actualizado.')
 }
 
 // --- HISTORY CHART LOGIC ---

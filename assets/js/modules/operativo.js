@@ -372,7 +372,7 @@ window.OperativoModule = {
     loadStockOverview: async function(requestId) {
         if (!this.isDashboardRequestActive(requestId, 'stock')) return;
         this.setDashboardTitle('Stock Check');
-        this.setDashboardSubtitle('Producto / Actual / Ideal / Sugerido / Packs');
+        this.setDashboardSubtitle('Producto / Actual / Ideal 500 / Ideal 900 / Sugerido / Packs');
         this.setDashboardLoading('Cargando stock...');
         if (!window.sb) {
             this.setDashboardEmpty('No se pudo conectar con el servidor.');
@@ -380,6 +380,10 @@ window.OperativoModule = {
         }
 
         try {
+            const idealPromise = window.AnalysisHelpers
+                ? window.AnalysisHelpers.getIdealMap(window.sb).catch(() => ({}))
+                : Promise.resolve({});
+
             const { data: skus, error: skuError } = await window.sb
                 .from('inventory_skus')
                 .select('id, name, ml, pack_quantity, is_active')
@@ -394,25 +398,30 @@ window.OperativoModule = {
             const skuIds = skus.map(sku => sku.id);
             let stocks = [];
             if (skuIds.length) {
-                const { data: stockData, error: stockError } = await window.sb
-                    .from('inventory_stock')
-                    .select('sku_id, stock_actual, stock_ideal')
-                    .in('sku_id', skuIds);
+            const { data: stockData, error: stockError } = await window.sb
+                .from('inventory_stock')
+                .select('sku_id, stock_actual')
+                .in('sku_id', skuIds);
 
-                if (stockError) throw stockError;
-                stocks = stockData || [];
+            if (stockError) throw stockError;
+            stocks = stockData || [];
             }
 
             const stockMap = new Map();
             stocks.forEach(stock => stockMap.set(stock.sku_id, stock));
 
             if (!this.isDashboardRequestActive(requestId, 'stock')) return;
+            const idealMap = await idealPromise;
+            if (!this.isDashboardRequestActive(requestId, 'stock')) return;
+
             this.stockItems = skus.map(sku => {
                 const stockEntry = stockMap.get(sku.id) || {};
                 const actual = stockEntry.stock_actual || 0;
-                const ideal = stockEntry.stock_ideal || 0;
+                const idealValues = idealMap[sku.id] || { ideal1: 0, ideal2: 0 };
+                const ideal1 = idealValues.ideal1 || 0;
+                const ideal2 = idealValues.ideal2 || 0;
                 const packQty = sku.pack_quantity || 1;
-                const gap = Math.max(ideal - actual, 0);
+                const gap = Math.max(ideal1 - actual, 0);
                 const suggested = gap > 0 ? Math.ceil(gap / packQty) : 0;
                 const isActive = sku.is_active !== false;
                 return {
@@ -422,7 +431,8 @@ window.OperativoModule = {
                     packQty,
                     is_active: isActive,
                     actual,
-                    ideal,
+                    ideal_500: ideal1,
+                    ideal_900: ideal2,
                     suggested
                 };
             });
@@ -522,7 +532,7 @@ window.OperativoModule = {
 
         const thead = document.createElement('thead');
         const headRow = document.createElement('tr');
-        ['Producto', 'Actual', 'Ideal', 'Sugerido', 'Packs'].forEach(label => {
+        ['Producto', 'Actual', 'Ideal 500', 'Ideal 900', 'Sugerido', 'Packs'].forEach(label => {
             const th = document.createElement('th');
             th.textContent = label;
             headRow.appendChild(th);
@@ -555,7 +565,8 @@ window.OperativoModule = {
             row.appendChild(nameCell);
 
             row.appendChild(this.buildOpCell(item.actual, true));
-            row.appendChild(this.buildOpCell(item.ideal, true));
+            row.appendChild(this.buildOpCell(item.ideal_500 || '-', true));
+            row.appendChild(this.buildOpCell(item.ideal_900 || '-', true));
             row.appendChild(this.buildOpCell(item.suggested || '-', true));
             row.appendChild(this.buildOpCell(item.packQty, true));
 
@@ -740,12 +751,9 @@ window.OperativoModule = {
 
     loadAnalysisOverview: async function(requestId) {
         if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
-        this.setDashboardTitle('Análisis de Consumo');
-        this.setDashboardSubtitle('Importar, analizar e histórico mensual.');
-        this.setDashboardToolbar(this.buildActionToolbar('Actualizar', () => {
-            this.clearAnalysisCache();
-            this.handleAnalysisTabChange(this.analysisTab, this.dashboardRequestId);
-        }));
+        this.setDashboardTitle('Cargar consumos');
+        this.setDashboardSubtitle('');
+        this.setDashboardToolbar(null);
         this.analysisTab = 'importar';
         if (!window.sb) {
             this.setDashboardEmpty('No se pudo conectar con el servidor.');
@@ -762,9 +770,7 @@ window.OperativoModule = {
         const tabs = document.createElement('div');
         tabs.className = 'op-tabs';
         const tabList = [
-            { id: 'importar', label: 'Importar' },
-            { id: 'analizar', label: 'Análisis' },
-            { id: 'historico', label: 'Histórico' }
+            { id: 'importar', label: 'Importa reporte' }
         ];
 
         tabList.forEach(tab => {
@@ -784,19 +790,12 @@ window.OperativoModule = {
         panel.appendChild(tabs);
 
         const importarPanel = this.buildAnalysisImportPanel();
-        const analizarPanel = this.buildAnalysisSummaryPanel();
-        const historicoPanel = this.buildAnalysisHistoryPanel();
 
         panel.appendChild(importarPanel);
-        panel.appendChild(analizarPanel);
-        panel.appendChild(historicoPanel);
         listContainer.appendChild(panel);
 
-        this.analysisPanels = {
-            analizar: analizarPanel,
-            historico: historicoPanel
-        };
-        this.handleAnalysisTabChange(this.analysisTab, requestId);
+        this.analysisPanels = null;
+        this.showAnalysisTab(this.analysisTab);
     },
 
     buildAnalysisImportPanel: function() {
@@ -804,20 +803,10 @@ window.OperativoModule = {
         panel.className = 'op-tab-panel';
         panel.dataset.tab = 'importar';
 
-        const title = document.createElement('h4');
-        title.className = 'op-heading';
-        title.textContent = 'Importar Consumos';
-        panel.appendChild(title);
-
-        const info = document.createElement('p');
-        info.className = 'op-muted';
-        info.textContent = 'Carga tu archivo Excel en el módulo completo para validar y registrar consumos.';
-        panel.appendChild(info);
-
         const openBtn = document.createElement('button');
         openBtn.type = 'button';
         openBtn.className = 'glass-button op-tab-btn';
-        openBtn.textContent = 'Abrir módulo completo';
+        openBtn.textContent = 'Importa reporte';
         openBtn.addEventListener('click', () => {
             window.location.href = '../herramientas/herramientas-analisis.html';
         });
@@ -826,88 +815,6 @@ window.OperativoModule = {
         return panel;
     },
 
-    buildAnalysisSummaryPanel: function() {
-        const panel = document.createElement('div');
-        panel.className = 'op-tab-panel hidden';
-        panel.dataset.tab = 'analizar';
-
-        const title = document.createElement('h4');
-        title.className = 'op-heading';
-        title.textContent = 'Resumen Operativo';
-        panel.appendChild(title);
-
-        const container = document.createElement('div');
-        container.className = 'op-summary-grid';
-        container.innerHTML = `
-            <div class="op-summary-card">
-                <p class="op-summary-label">Reportes 30d</p>
-                <p class="op-summary-value" data-summary="reports">-</p>
-            </div>
-            <div class="op-summary-card">
-                <p class="op-summary-label">Consumo total</p>
-                <p class="op-summary-value" data-summary="total">-</p>
-            </div>
-            <div class="op-summary-card">
-                <p class="op-summary-label">Última carga</p>
-                <p class="op-summary-value" data-summary="latest">-</p>
-            </div>
-        `;
-        panel.appendChild(container);
-
-        const note = document.createElement('p');
-        note.className = 'op-muted';
-        note.textContent = 'Datos de los últimos 30 días.';
-        panel.appendChild(note);
-
-        return panel;
-    },
-
-    buildAnalysisHistoryPanel: function() {
-        const panel = document.createElement('div');
-        panel.className = 'op-tab-panel hidden';
-        panel.dataset.tab = 'historico';
-
-        const title = document.createElement('h4');
-        title.className = 'op-heading';
-        title.textContent = 'Histórico Mensual';
-        panel.appendChild(title);
-
-        const monthLabel = document.createElement('p');
-        monthLabel.className = 'op-muted';
-        monthLabel.dataset.historyMonth = 'true';
-        monthLabel.textContent = 'Mes actual';
-        panel.appendChild(monthLabel);
-
-        const chart = document.createElement('div');
-        chart.className = 'op-chart';
-        chart.dataset.chart = 'history';
-        panel.appendChild(chart);
-
-        const tableWrap = document.createElement('div');
-        tableWrap.className = 'op-scroll';
-        const table = document.createElement('table');
-        table.className = 'op-table';
-        table.innerHTML = `
-            <thead>
-                <tr>
-                    <th>Producto</th>
-                    <th>Unidades</th>
-                    <th>Costo</th>
-                    <th>Recaudación</th>
-                </tr>
-            </thead>
-            <tbody data-history-table></tbody>
-        `;
-        tableWrap.appendChild(table);
-        panel.appendChild(tableWrap);
-
-        const note = document.createElement('p');
-        note.className = 'op-muted';
-        note.textContent = 'Costo y recaudación: en desarrollo.';
-        panel.appendChild(note);
-
-        return panel;
-    },
 
     showAnalysisTab: function(tabId) {
         const panels = document.querySelectorAll('#content-list [data-tab]');

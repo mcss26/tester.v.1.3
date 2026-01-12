@@ -105,6 +105,10 @@ window.AdminStockModule = {
         const searchVal = document.getElementById('search-stock-input')?.value || '';
 
         try {
+            const idealPromise = window.AnalysisHelpers
+                ? window.AnalysisHelpers.getIdealMap(this.sb).catch(() => ({}))
+                : Promise.resolve({});
+
             // 1. Fetch SKUs
             let querySkus = this.sb.from('inventory_skus')
                 .select('id, name, external_id, category_id')
@@ -133,7 +137,7 @@ window.AdminStockModule = {
             if (skuIds.length > 0) {
                 const { data: stockData, error: stockError } = await this.sb
                     .from('inventory_stock')
-                    .select('sku_id, stock_actual, stock_ideal, updated_at')
+                    .select('sku_id, stock_actual, updated_at')
                     .in('sku_id', skuIds);
 
                 if (stockError) throw stockError;
@@ -146,12 +150,15 @@ window.AdminStockModule = {
             });
 
             // 3. Merge Data
+            const idealMap = await idealPromise;
             const merged = skus.map(sku => {
                 const stockEntry = stockMap.get(sku.id);
+                const idealValues = idealMap[sku.id] || { ideal1: 0, ideal2: 0 };
                 return {
                     ...sku,
                     stock_actual: stockEntry ? stockEntry.stock_actual : 0,
-                    stock_ideal: stockEntry ? stockEntry.stock_ideal : 0,
+                    ideal_500: idealValues.ideal1 || 0,
+                    ideal_900: idealValues.ideal2 || 0,
                     last_updated: stockEntry ? stockEntry.updated_at : null
                 };
             });
@@ -176,7 +183,7 @@ window.AdminStockModule = {
         const table = document.createElement('table');
         const thead = document.createElement('thead');
         const headRow = document.createElement('tr');
-        ['Producto', 'Categoría', 'Stock Actual', 'Stock Ideal', 'Estado', 'Acción'].forEach(label => {
+        ['Producto', 'Categoría', 'Stock Actual', 'Ideal 500', 'Ideal 900', 'Estado', 'Acción'].forEach(label => {
             const th = document.createElement('th');
             th.textContent = label;
             headRow.appendChild(th);
@@ -213,17 +220,16 @@ window.AdminStockModule = {
             row.appendChild(actualCell);
 
             const idealCell = document.createElement('td');
-            const idealInput = document.createElement('input');
-            idealInput.type = 'number';
-            idealInput.id = `ideal-val-${item.id}`;
-            idealInput.value = item.stock_ideal;
-            idealInput.className = 'table-input';
-            idealCell.appendChild(idealInput);
+            idealCell.textContent = item.ideal_500 || '-';
             row.appendChild(idealCell);
+
+            const ideal2Cell = document.createElement('td');
+            ideal2Cell.textContent = item.ideal_900 || '-';
+            row.appendChild(ideal2Cell);
 
             const statusCell = document.createElement('td');
             const statusPill = document.createElement('span');
-            const status = this.getStockStatus(item.stock_actual, item.stock_ideal);
+            const status = this.getStockStatus(item.stock_actual, item.ideal_500);
             statusPill.className = `status-pill ${status.className}`;
             statusPill.textContent = status.label;
             statusCell.appendChild(statusPill);
@@ -247,17 +253,15 @@ window.AdminStockModule = {
 
     updateStock: async function(skuId) {
         const inputActual = document.getElementById(`stock-val-${skuId}`);
-        const inputIdeal = document.getElementById(`ideal-val-${skuId}`);
         
         const newActual = parseFloat(inputActual.value);
-        const newIdeal = parseFloat(inputIdeal.value);
 
-        if (isNaN(newActual) || isNaN(newIdeal)) {
+        if (isNaN(newActual)) {
             alert('Ingrese números válidos');
             return;
         }
 
-        if (!confirm(`¿Actualizar stock?\nActual: ${newActual}\nIdeal: ${newIdeal}`)) return;
+        if (!confirm(`¿Actualizar stock?\nActual: ${newActual}`)) return;
 
         try {
             // Upsert to handle cases where entry doesn't exist yet
@@ -266,7 +270,6 @@ window.AdminStockModule = {
                 .upsert({ 
                     sku_id: skuId, 
                     stock_actual: newActual,
-                    stock_ideal: newIdeal,
                     updated_at: new Date().toISOString()
                 }, { onConflict: 'sku_id' });
 
