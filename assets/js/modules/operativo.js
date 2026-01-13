@@ -8,7 +8,9 @@ window.OperativoModule = {
     profile: null,
     activeEvent: null,
     stockItems: [],
+    stockItems: [],
     stockFilter: 'active',
+    stockIdealMode: '500', // '500' or '900'
     analysisTab: 'importar',
     analysisCache: {
         summary: null,
@@ -407,8 +409,9 @@ window.OperativoModule = {
 
     loadStockOverview: async function(requestId) {
         if (!this.isDashboardRequestActive(requestId, 'stock')) return;
-        this.setDashboardTitle('Stock Check');
-        this.setDashboardSubtitle('Producto / Actual / Ideal 500 / Ideal 900 / Sugerido / Packs');
+        if (!this.isDashboardRequestActive(requestId, 'stock')) return;
+        this.setDashboardTitle('');
+        this.setDashboardSubtitle('');
         this.setDashboardLoading('Cargando stock...');
         if (!window.sb) {
             this.setDashboardEmpty('No se pudo conectar con el servidor.');
@@ -457,8 +460,13 @@ window.OperativoModule = {
                 const ideal1 = idealValues.ideal1 || 0;
                 const ideal2 = idealValues.ideal2 || 0;
                 const packQty = sku.pack_quantity || 1;
-                const gap = Math.max(ideal1 - actual, 0);
-                const suggested = gap > 0 ? Math.ceil(gap / packQty) : 0;
+                const gap500 = Math.max(ideal1 - actual, 0);
+                const gap900 = Math.max(ideal2 - actual, 0);
+                
+                // Suggested in UNITS
+                const suggested500 = gap500; 
+                const suggested900 = gap900;
+                
                 const isActive = sku.is_active !== false;
                 return {
                     id: sku.id,
@@ -469,7 +477,8 @@ window.OperativoModule = {
                     actual,
                     ideal_500: ideal1,
                     ideal_900: ideal2,
-                    suggested
+                    suggested: suggested500, // Default base
+                    suggested900: suggested900,
                 };
             });
 
@@ -495,29 +504,41 @@ window.OperativoModule = {
 
         const wrapper = document.createElement('div');
         wrapper.className = 'op-toolbar';
+        wrapper.style.justifyContent = 'space-between'; 
 
-        const tabs = document.createElement('div');
-        tabs.className = 'op-tabs';
-        tabs.appendChild(this.buildStockFilterButton('active', `Activos (${activeCount})`));
-        tabs.appendChild(this.buildStockFilterButton('inactive', `Descontinuados (${inactiveCount})`));
-        wrapper.appendChild(tabs);
+        const leftGroup = document.createElement('div');
+        leftGroup.className = 'op-tabs';
+        leftGroup.appendChild(this.buildStockFilterButton('active', `Activos (${activeCount})`));
+        leftGroup.appendChild(this.buildStockFilterButton('inactive', `Descontinuados (${inactiveCount})`));
+        wrapper.appendChild(leftGroup);
 
-        const actions = document.createElement('div');
-        actions.className = 'op-toolbar-actions';
+        const rightGroup = document.createElement('div');
+        rightGroup.style.display = 'flex';
+        rightGroup.style.gap = '10px';
+        rightGroup.style.alignItems = 'center';
 
-        const meta = document.createElement('div');
-        meta.className = 'op-muted';
-        meta.textContent = `Total: ${this.stockItems.length}`;
-        actions.appendChild(meta);
+        // Ideal Toggle (Only when 'active' is selected)
+        if (this.stockFilter === 'active') {
+             const toggleBtn = document.createElement('button');
+             toggleBtn.type = 'button';
+             toggleBtn.className = 'glass-button op-tab-btn';
+             toggleBtn.textContent = this.stockIdealMode === '500' ? 'Ideal 500' : 'Ideal 900';
+             toggleBtn.addEventListener('click', () => {
+                 this.stockIdealMode = this.stockIdealMode === '500' ? '900' : '500';
+                 this.setDashboardToolbar(this.renderStockToolbar());
+                 this.renderStockTable();
+             });
+             rightGroup.appendChild(toggleBtn);
+        }
 
         const refresh = document.createElement('button');
         refresh.type = 'button';
         refresh.className = 'glass-button op-tab-btn';
         refresh.textContent = 'Actualizar';
         refresh.addEventListener('click', () => this.loadStockOverview(this.dashboardRequestId));
-        actions.appendChild(refresh);
+        rightGroup.appendChild(refresh);
 
-        wrapper.appendChild(actions);
+        wrapper.appendChild(rightGroup);
 
         return wrapper;
     },
@@ -566,9 +587,21 @@ window.OperativoModule = {
 
         const thead = document.createElement('thead');
         const headRow = document.createElement('tr');
-        ['Producto', 'Actual', 'Ideal 500', 'Ideal 900', 'Sugerido', 'Packs'].forEach(label => {
+        
+        const idealLabel = this.stockIdealMode === '500' ? 'Ideal 500' : 'Ideal 900';
+
+        const columns = [
+            { text: 'Producto', align: 'left' },
+            { text: 'Actual', align: 'center' },
+            { text: idealLabel, align: 'center' },
+            { text: 'Sugerido (u)', align: 'center' },
+            { text: 'Solicitar', align: 'center' }
+        ];
+
+        columns.forEach(col => {
             const th = document.createElement('th');
-            th.textContent = label;
+            th.textContent = col.text;
+            th.style.textAlign = col.align;
             headRow.appendChild(th);
         });
         thead.appendChild(headRow);
@@ -578,7 +611,12 @@ window.OperativoModule = {
         const fragment = document.createDocumentFragment();
         filtered.forEach(item => {
             const row = document.createElement('tr');
-            if (item.suggested > 0) row.classList.add('is-low');
+            
+            // Logic for suggested value based on mode
+            const idealVal = this.stockIdealMode === '500' ? (item.ideal_500 || 0) : (item.ideal_900 || 0);
+            const suggestedVal = Math.max(idealVal - item.actual, 0);
+
+            if (suggestedVal > 0) row.classList.add('is-low');
 
             const nameCell = document.createElement('td');
             const name = document.createElement('div');
@@ -598,11 +636,30 @@ window.OperativoModule = {
             }
             row.appendChild(nameCell);
 
-            row.appendChild(this.buildOpCell(item.actual, true));
-            row.appendChild(this.buildOpCell(item.ideal_500 || '-', true));
-            row.appendChild(this.buildOpCell(item.ideal_900 || '-', true));
-            row.appendChild(this.buildOpCell(item.suggested || '-', true));
-            row.appendChild(this.buildOpCell(item.packQty, true));
+            // Helper to build centered cells
+            const buildCenteredCell = (val) => {
+                const td = document.createElement('td');
+                td.textContent = val !== undefined && val !== null ? val : '-';
+                td.style.textAlign = 'center';
+                return td;
+            };
+
+            row.appendChild(buildCenteredCell(item.actual));
+            row.appendChild(buildCenteredCell(idealVal));
+            
+            // Sugerido (Units)
+            row.appendChild(buildCenteredCell(suggestedVal));
+            
+            // Solicitar (Checkbox)
+            const checkCell = document.createElement('td');
+            checkCell.style.textAlign = 'center';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'op-checkbox'; 
+            checkbox.value = item.id;
+            
+            checkCell.appendChild(checkbox);
+            row.appendChild(checkCell);
 
             fragment.appendChild(row);
         });
