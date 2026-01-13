@@ -205,7 +205,33 @@ window.OperativoModule = {
         this.renderOpenEvents(events, chipsContainer);
     },
 
-    // ... renderOpenEvents ...
+    renderOpenEvents: function(events, container) {
+        container.textContent = '';
+        if (!events || !events.length) return;
+
+        events.forEach(event => {
+            const dateObj = new Date(event.date + 'T12:00:00'); // Normalize
+            const dayName = dateObj.toLocaleDateString('es-AR', { weekday: 'short' });
+            const dayNum = dateObj.getDate();
+            const label = `${dayName.toUpperCase()} ${dayNum}`;
+
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'chip-date';
+            chip.textContent = label;
+            
+            // Auto Select if Active Event matches
+            if (this.activeEvent && this.activeEvent.id === event.id) {
+                chip.classList.add('active');
+            }
+
+            chip.addEventListener('click', () => {
+                this.selectEvent(event, chip);
+            });
+
+            container.appendChild(chip);
+        });
+    },
 
     selectEvent: function(event, chipEl) {
         this.activeEvent = event;
