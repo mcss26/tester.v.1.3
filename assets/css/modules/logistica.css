@@ -1,0 +1,256 @@
+/* Logistics Module Styles */
+
+/* Request Cards (Dashboard) */
+.logistics-card {
+    background: rgba(20, 20, 20, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.logistics-card:hover {
+    background: rgba(40, 40, 40, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.card-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.card-title {
+    font-weight: 700;
+    font-size: 1.1em;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.card-date {
+    font-size: 0.85em;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.btn-manage {
+    background: linear-gradient(135deg, #e50914, #b20710);
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 5px rgba(229, 9, 20, 0.3);
+}
+
+.btn-manage:hover {
+    box-shadow: 0 4px 8px rgba(229, 9, 20, 0.5);
+    transform: scale(1.05);
+}
+
+.preview-list {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 0 0;
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.7);
+    padding-left: 10px;
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.preview-list li {
+    margin-bottom: 2px;
+}
+
+
+/* --- ASSIGNMENT MODAL (SMART GRID LAYOUT) --- */
+
+.assign-list-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    padding-bottom: 20px;
+}
+
+.assign-item-card {
+    background: rgba(30, 30, 30, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.25s ease;
+    position: relative;
+    /* overflow: hidden; Removed to allow dropdowns if custom */
+    display: flex;
+    flex-direction: column;
+}
+
+.assign-item-card:hover {
+    background: rgba(40, 40, 40, 0.6);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+/* Valid State (JS toggled) */
+.assign-item-card.is-valid {
+    border-color: rgba(0, 255, 136, 0.6);
+    background: rgba(0, 255, 136, 0.03);
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.05);
+}
+
+.assign-item-card.is-valid .item-name {
+    color: #00ff88;
+}
+
+.item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.item-name {
+    font-weight: 700;
+    color: #fff;
+    font-size: 1.05em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70%;
+}
+
+.item-qty {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+    color: #ffd700;
+    border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.item-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1; /* Pushes content to fill height */
+}
+
+.form-row {
+    display: flex;
+    gap: 12px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+
+.form-group label {
+    font-size: 0.7em;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 600;
+}
+
+/* Custom Inputs & Selects */
+.custom-select-wrapper, .input-wrapper {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+}
+
+select.item-supplier-select, 
+input.item-cost-input, 
+input.item-date-input {
+    background: rgba(10, 10, 10, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 10px 12px;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 100%;
+    font-size: 0.95em;
+    font-family: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+/* Custom Select Arrow */
+select.item-supplier-select {
+    padding-right: 35px;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 14px;
+    cursor: pointer;
+}
+
+select.item-supplier-select:focus,
+input:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(20, 20, 20, 0.8);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.05);
+}
+
+select.item-supplier-select option {
+    background: #1a1a1a;
+    color: #fff;
+    padding: 10px;
+}
+
+/* Input Wrapper for Currency */
+.input-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.currency-symbol {
+    position: absolute;
+    left: 10px;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.9em;
+    pointer-events: none;
+}
+
+.item-cost-input {
+    padding-left: 25px !important; /* Make room for $ */
+}
+
+/* Date input specific */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.5;
+    cursor: pointer;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 0.8;
+}
+
+/* Modal Scrollbar */
+.modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+.modal-body::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.1);
+}
+.modal-body::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+}

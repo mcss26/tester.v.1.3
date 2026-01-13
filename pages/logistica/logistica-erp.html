@@ -5,34 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Logística ERP | Midnight Club</title>
   <link rel="stylesheet" href="../../assets/css/index.css" />
+  <link rel="stylesheet" href="../../assets/css/modules/logistica.css" />
+  <link rel="stylesheet" href="../../assets/css/modules/logistica-modal.css" />
   
   <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script defer src="../../assets/js/core/config.js"></script>
   <script defer src="../../assets/js/modules/logistica.js"></script>
 </head>
 <body class="welcome-screen" data-page="erp">
-    <header class="operativo-header" style="justify-content: space-between; padding: 20px; width: 100%; position: absolute; top: 0; left: 0; z-index: 10;">
+    <header class="operativo-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; width: 100%; position: absolute; top: 0; left: 0; z-index: 10;">
       <a class="footer-link back-link" href="./logistica-index.html" style="margin: 0; position: relative; z-index: 20;">
         &larr; Volver
       </a>
       <div class="operativo-user">
-        <p class="operativo-user-mode" style="font-size: 14px; opacity: 1; font-weight: 700;">LOGÍSTICA</p>
+        <p class="operativo-user-mode" style="font-size: 11px; opacity: 0.7; font-weight: 600; letter-spacing: 0.1em; margin: 0;">LOGÍSTICA</p>
       </div>
     </header>
 
   <main class="center-content" style="padding-top: 60px;">
 
-    <!-- Date Selection -->
-    <section class="dates-section fade-in-delayed">
-      <div id="date-chips" class="chips-row">
-        <!-- Filled by JS -->
-        <div class="skeleton-chip"></div>
-        <div class="skeleton-chip"></div>
-      </div>
-    </section>
+
 
     <!-- Actions -->
-    <section id="action-container" class="action-section fade-in hidden">
+    <section id="action-container" class="action-section fade-in">
       <div class="actions-flex" style="display: flex; gap: 25px; justify-content: center; flex-wrap: wrap;">
         <button id="btn-ready-to-go" class="footer-link" type="button" style="background:none; border:none; cursor:pointer;">
           Ready-to-go
@@ -64,6 +59,27 @@
       </header>
       <div id="content-list" class="staff-list"></div>
     </section>
+
+
+    <!-- Slide-over Panel for Logistics Assignment -->
+    <div id="panel-overlay" class="panel-overlay" aria-hidden="true"></div>
+    <aside id="panel-assign-logistics" class="slide-panel" aria-hidden="true">
+        <header class="panel-header">
+            <h3 class="panel-title">Gestionar Solicitud</h3>
+            <button type="button" class="btn-close-panel" id="btn-close-logistics-panel" aria-label="Cerrar">&times;</button>
+        </header>
+        
+        <div class="panel-body">
+            <div id="assign-items-container">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+
+        <footer class="panel-footer">
+            <button type="button" class="btn-secondary" id="btn-cancel-logistics">Cancelar</button>
+            <button type="button" class="btn-success" id="btn-confirm-logistics">Enviar</button>
+        </footer>
+    </aside>
 
   </main>
 </body>
