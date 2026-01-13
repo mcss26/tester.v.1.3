@@ -1494,26 +1494,42 @@ window.OperativoModule = {
                 
                 // --- 1. Top Toolbar: Search + Category Tabs ---
                 const toolbar = document.createElement('div');
+                toolbar.className = 'op-toolbar';
                 toolbar.style.display = 'flex';
                 toolbar.style.flexDirection = 'column';
-                toolbar.style.gap = '10px';
-                toolbar.style.marginBottom = '15px';
+                toolbar.style.alignItems = 'stretch';
+                toolbar.style.gap = '12px';
+                toolbar.style.marginBottom = '20px';
+                toolbar.style.padding = '0'; // Reset padding if op-toolbar has defaults not fitting column
+                toolbar.style.background = 'transparent';
 
                 // Search Bar
+                const searchContainer = document.createElement('div');
+                searchContainer.style.position = 'relative';
+                
                 const searchInput = document.createElement('input');
                 searchInput.type = 'text';
                 searchInput.placeholder = 'Buscar producto...';
                 searchInput.className = 'op-input glass-input';
                 searchInput.style.width = '100%';
-                toolbar.appendChild(searchInput);
+                searchInput.style.paddingLeft = '35px'; // Space for icon if added, else just breathing room
+                
+                // Icon placeholder (optional)
+                // const icon = document.createElement('span'); ...
+                
+                searchContainer.appendChild(searchInput);
+                toolbar.appendChild(searchContainer);
 
                 // Category Tabs (Scrollable)
                 const tabsContainer = document.createElement('div');
-                tabsContainer.className = 'op-tabs-scroll';
+                tabsContainer.className = 'op-tabs';
                 tabsContainer.style.display = 'flex';
                 tabsContainer.style.gap = '8px';
                 tabsContainer.style.overflowX = 'auto';
-                tabsContainer.style.paddingBottom = '5px';
+                tabsContainer.style.whiteSpace = 'nowrap';
+                tabsContainer.style.paddingBottom = '4px'; // Hide scrollbar visual or provide space
+                // Hide scrollbar style
+                tabsContainer.style.scrollbarWidth = 'none'; 
                 
                 // Helper to create tab
                 let activeCategoryId = 'all';
@@ -1521,9 +1537,9 @@ window.OperativoModule = {
                 const createTab = (id, label) => {
                     const btn = document.createElement('button');
                     btn.type = 'button';
-                    btn.className = `op-tab-btn ${id === activeCategoryId ? 'active' : ''}`;
+                    // Use standard classes
+                    btn.className = `glass-button op-tab-btn ${id === activeCategoryId ? 'active' : ''}`;
                     btn.textContent = label;
-                    btn.style.whiteSpace = 'nowrap';
                     btn.onclick = () => {
                         activeCategoryId = id;
                         // Update active state
