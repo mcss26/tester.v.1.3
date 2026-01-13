@@ -584,6 +584,8 @@ window.OperativoModule = {
 
         const table = document.createElement('table');
         table.className = 'op-table';
+        table.style.width = '100%';
+        table.style.tableLayout = 'fixed';
 
         const thead = document.createElement('thead');
         const headRow = document.createElement('tr');
@@ -591,17 +593,18 @@ window.OperativoModule = {
         const idealLabel = this.stockIdealMode === '500' ? 'Ideal 500' : 'Ideal 900';
 
         const columns = [
-            { text: 'Producto', align: 'left' },
-            { text: 'Actual', align: 'center' },
-            { text: idealLabel, align: 'center' },
-            { text: 'Sugerido (u)', align: 'center' },
-            { text: 'Solicitar', align: 'center' }
+            { text: 'Producto', align: 'left', width: '40%' },
+            { text: 'Actual', align: 'center', width: '15%' },
+            { text: idealLabel, align: 'center', width: '15%' },
+            { text: 'Sugerido (u)', align: 'center', width: '15%' },
+            { text: 'Solicitar', align: 'center', width: '15%' }
         ];
 
         columns.forEach(col => {
             const th = document.createElement('th');
             th.textContent = col.text;
             th.style.textAlign = col.align;
+            th.style.width = col.width; // Fixed width
             headRow.appendChild(th);
         });
         thead.appendChild(headRow);
