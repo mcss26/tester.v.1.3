@@ -887,21 +887,41 @@ window.OperativoModule = {
         // 1. Import Panel
         const importPanel = this.buildAnalysisImportPanel();
         
-        // 2. Analyze Panel (Empty placeholder)
+        // 2. Analyze Panel (Table structure)
         const analyzePanel = document.createElement('div');
         analyzePanel.className = 'op-tab-panel hidden';
         analyzePanel.dataset.tab = 'analizar';
-        // Basic structure for analyze summary
         analyzePanel.innerHTML = `
-            <div data-summary="reports"></div>
-            <div data-summary="total"></div>
-            <div data-summary="latest"></div>
+            <div class="op-panel">
+                <div class="op-scroll">
+                    <table class="op-table" style="width:100%; table-layout:fixed;" id="analysis-table">
+                        <thead>
+                            <tr>
+                                <th style="text-align:left; width:50%">Producto</th>
+                                <th style="text-align:center; width:25%">Total</th>
+                                <th style="text-align:center; width:25%">Promedio/Op</th>
+                            </tr>
+                        </thead>
+                        <tbody id="analysis-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
         `;
 
-        // 3. History Panel (Empty placeholder)
+        // 3. History Panel (Table structure)
         const historyPanel = document.createElement('div');
         historyPanel.className = 'op-tab-panel hidden';
         historyPanel.dataset.tab = 'historico';
+        historyPanel.innerHTML = `
+            <div class="op-panel">
+                <div class="op-scroll">
+                    <table class="op-table" id="history-table" style="width:100%; border-collapse: collapse;">
+                        <thead id="history-thead"></thead>
+                        <tbody id="history-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        `;
 
         mainPanel.appendChild(importPanel);
         mainPanel.appendChild(analyzePanel);
@@ -961,166 +981,192 @@ window.OperativoModule = {
     },
 
     loadAnalysisSummary: async function(panel, requestId) {
-        const reportsEl = panel.querySelector('[data-summary="reports"]');
-        const totalEl = panel.querySelector('[data-summary="total"]');
-        const latestEl = panel.querySelector('[data-summary="latest"]');
-        if (!reportsEl || !totalEl || !latestEl) return;
+        const tbody = panel.querySelector('#analysis-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="3" class="op-muted" style="text-align:center">Cargando análisis...</td></tr>';
+        
         if (!window.sb) return;
-        if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
-
-        const cached = this.analysisCache.summary;
-        if (cached && (Date.now() - cached.timestamp) < 120000) {
-            this.applyAnalysisSummary(cached.data, panel);
-            return;
-        }
-
-        reportsEl.textContent = '...';
-        totalEl.textContent = '...';
-        latestEl.textContent = '...';
 
         try {
-            const since = this.getDateOffset(-30);
-            const { data: reports, error } = await window.sb
+            // Fetch last 30 days
+            const since = new Date();
+            since.setDate(since.getDate() - 30);
+            const sinceStr = since.toISOString().split('T')[0];
+
+            const { data: reports, error: reportsError } = await window.sb
                 .from('consumption_reports')
                 .select('id, operational_date')
-                .gte('operational_date', since);
-
-            if (error) throw error;
-            if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
+                .gte('operational_date', sinceStr);
+            
+            if (reportsError) throw reportsError;
             if (!reports || !reports.length) {
-                this.applyAnalysisSummary({ reports: 0, total: 0, latest: '-' }, panel);
-                this.analysisCache.summary = {
-                    timestamp: Date.now(),
-                    data: { reports: 0, total: 0, latest: '-' }
-                };
+                tbody.innerHTML = '<tr><td colspan="3" class="op-muted" style="text-align:center">Sin datos recientes.</td></tr>';
                 return;
             }
 
-            const reportIds = reports.map(rep => rep.id);
-            const latestDate = reports.reduce((latest, rep) => {
-                if (!latest || rep.operational_date > latest) return rep.operational_date;
-                return latest;
-            }, '');
-
+            const reportIds = reports.map(r => r.id);
             const { data: details, error: detailsError } = await window.sb
                 .from('consumption_details')
-                .select('quantity')
+                .select('quantity, inventory_skus (id, name, unit)')
                 .in('report_id', reportIds);
 
             if (detailsError) throw detailsError;
             if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
-            const total = (details || []).reduce((sum, item) => sum + (item.quantity || 0), 0);
 
-            const summaryData = {
-                reports: reports.length,
-                total: Math.round(total),
-                latest: latestDate || '-'
-            };
-            this.applyAnalysisSummary(summaryData, panel);
-            this.analysisCache.summary = {
-                timestamp: Date.now(),
-                data: summaryData
-            };
+            // Process Data
+            const itemMap = new Map();
+            details.forEach(d => {
+                if (!d.inventory_skus) return;
+                const sku = d.inventory_skus;
+                const id = sku.id;
+                if (!itemMap.has(id)) {
+                    itemMap.set(id, { name: sku.name, total: 0, count: 0 });
+                }
+                const entry = itemMap.get(id);
+                entry.total += (d.quantity || 0);
+                entry.count += 1; // Can refine to count per distinct report if needed, but simplistic avg/op is typically total / reports count
+            });
+            
+            // Re-calculate avg based on UNIQUE reports count where item appeared? Or total operational days?
+            // "Promedio/Op" usually means Average per Operation (Day).
+            // Let's use total / reports.length (total days with ANY data) or count of days item appeared?
+            // Usually simpler: Total / Total Reports found in period.
+            const totalOps = reports.length;
+
+            const rows = Array.from(itemMap.values()).sort((a, b) => b.total - a.total);
+            
+            tbody.innerHTML = '';
+            rows.forEach(item => {
+                const tr = document.createElement('tr');
+                
+                const tdName = document.createElement('td');
+                tdName.textContent = item.name;
+                tdName.style.textAlign = 'left';
+                tr.appendChild(tdName);
+                
+                const tdTotal = document.createElement('td');
+                tdTotal.textContent = Math.round(item.total);
+                tdTotal.style.textAlign = 'center';
+                tr.appendChild(tdTotal);
+                
+                const tdAvg = document.createElement('td');
+                tdAvg.textContent = (item.total / totalOps).toFixed(1);
+                tdAvg.style.textAlign = 'center';
+                tr.appendChild(tdAvg);
+                
+                tbody.appendChild(tr);
+            });
+            
         } catch (err) {
-            console.error('Error loading analysis summary:', err);
-            reportsEl.textContent = '-';
-            totalEl.textContent = '-';
-            latestEl.textContent = '-';
+            console.error(err);
+            tbody.innerHTML = '<tr><td colspan="3" class="op-error">Error cargando datos.</td></tr>';
         }
     },
 
     loadHistorySummary: async function(panel, requestId) {
-        const chart = panel.querySelector('[data-chart="history"]');
-        const tbody = panel.querySelector('[data-history-table]');
-        const monthLabel = panel.querySelector('[data-history-month="true"]');
-        if (!chart || !tbody) return;
-        if (!window.sb) return;
-        if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
-
-        const monthKey = this.getMonthKey(new Date());
-        const cached = this.analysisCache.history;
-        if (cached && cached.monthKey === monthKey && (Date.now() - cached.timestamp) < 120000) {
-            if (monthLabel) monthLabel.textContent = cached.label;
-            this.renderHistorySummary(chart, tbody, cached.items);
-            return;
-        }
-
-        chart.innerHTML = '<p class="op-muted">Cargando diagrama...</p>';
-        tbody.innerHTML = '';
-
+        const thead = panel.querySelector('#history-thead');
+        const tbody = panel.querySelector('#history-tbody');
+        if (!thead || !tbody) return;
+        
+        tbody.innerHTML = '<tr><td class="op-muted">Cargando historial...</td></tr>';
+        
         try {
-            const monthStart = this.getMonthStart();
-            const today = this.getDateOffset(0);
-            if (monthLabel) {
-                monthLabel.textContent = this.getMonthLabel(new Date());
-            }
-            const { data: reports, error } = await window.sb
+            // Fetch last 15 reports for column limit
+            const { data: reports, error: reportsError } = await window.sb
                 .from('consumption_reports')
                 .select('id, operational_date')
-                .gte('operational_date', monthStart)
-                .lte('operational_date', today);
-
-            if (error) throw error;
-            if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
+                .order('operational_date', { ascending: false })
+                .limit(15);
+                
+            if (reportsError) throw reportsError;
             if (!reports || !reports.length) {
-                chart.innerHTML = '<p class="op-muted">Sin consumos registrados este mes.</p>';
+                tbody.innerHTML = '<tr><td class="op-muted">Sin reportes registrados.</td></tr>';
                 return;
             }
-
-            const reportIds = reports.map(rep => rep.id);
+            
+            // Sort Chronologically for headers (Oldest -> Newest) or leave Rev Chrono?
+            // Usually Matrix is Product | Date 1 | Date 2...
+            // Let's do Descending (Newest First) as it's more relevant.
+            
+            const reportIds = reports.map(r => r.id);
             const { data: details, error: detailsError } = await window.sb
                 .from('consumption_details')
-                .select('sku_id, quantity')
+                .select('quantity, report_id, inventory_skus (id, name)')
                 .in('report_id', reportIds);
 
             if (detailsError) throw detailsError;
             if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
-            if (!details || !details.length) {
-                chart.innerHTML = '<p class="op-muted">Sin detalles disponibles.</p>';
-                return;
-            }
-
-            const totals = {};
-            details.forEach(item => {
-                const skuId = item.sku_id || 'unknown';
-                totals[skuId] = (totals[skuId] || 0) + (item.quantity || 0);
+            
+            // Matrix Construction
+            const skuMap = new Map();
+            // Distinct SKUs
+            details.forEach(d => {
+                if (!d.inventory_skus) return;
+                const sid = d.inventory_skus.id;
+                if (!skuMap.has(sid)) {
+                    skuMap.set(sid, { name: d.inventory_skus.name, data: {} });
+                }
+                skuMap.get(sid).data[d.report_id] = (skuMap.get(sid).data[d.report_id] || 0) + d.quantity;
+            });
+            
+            // Render Headers
+            thead.innerHTML = '';
+            const trHead = document.createElement('tr');
+            
+            const thProd = document.createElement('th');
+            thProd.textContent = 'Producto';
+            thProd.style.textAlign = 'left';
+            thProd.style.minWidth = '150px';
+            thProd.style.position = 'sticky';
+            thProd.style.left = '0';
+            thProd.style.background = '#1a0505'; // Match theme bg for sticky
+            thProd.style.zIndex = '10';
+            trHead.appendChild(thProd);
+            
+            reports.forEach(rep => {
+                const th = document.createElement('th');
+                // Format date: DD/MM
+                const dateParts = rep.operational_date.split('-');
+                th.textContent = `${dateParts[2]}/${dateParts[1]}`;
+                th.style.textAlign = 'center';
+                th.style.minWidth = '60px';
+                trHead.appendChild(th);
+            });
+            thead.appendChild(trHead);
+            
+            // Render Body
+            tbody.innerHTML = '';
+            const rows = Array.from(skuMap.values()).sort((a,b) => a.name.localeCompare(b.name));
+            
+            rows.forEach(item => {
+                const tr = document.createElement('tr');
+                const tdName = document.createElement('td');
+                tdName.textContent = item.name;
+                tdName.style.textAlign = 'left';
+                tdName.style.position = 'sticky';
+                tdName.style.left = '0';
+                tdName.style.background = '#1a0505'; // Match theme
+                tdName.style.zIndex = '5';
+                tdName.style.borderRight = '1px solid #330d0d';
+                tr.appendChild(tdName);
+                
+                reports.forEach(rep => {
+                    const td = document.createElement('td');
+                    const val = item.data[rep.id];
+                    td.textContent = val ? Math.round(val) : '-';
+                    td.style.textAlign = 'center';
+                    if (!val) td.className = 'op-muted';
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
             });
 
-            const ranked = Object.entries(totals)
-                .map(([skuId, qty]) => ({ skuId, qty }))
-                .sort((a, b) => b.qty - a.qty);
-
-            const topItems = ranked.slice(0, 10);
-            const maxValue = topItems[0]?.qty || 1;
-
-            const skuIds = topItems.map(item => item.skuId).filter(id => id !== 'unknown');
-            const skuMap = new Map();
-            if (skuIds.length) {
-                const { data: skus, error: skuError } = await window.sb
-                    .from('inventory_skus')
-                    .select('id, name')
-                    .in('id', skuIds);
-                if (skuError) throw skuError;
-                (skus || []).forEach(sku => skuMap.set(sku.id, sku.name));
-            }
-
-            const itemsWithNames = topItems.map(item => ({
-                name: skuMap.get(item.skuId) || 'Producto',
-                qty: item.qty
-            }));
-
-            this.renderHistorySummary(chart, tbody, itemsWithNames, maxValue);
-            this.analysisCache.history = {
-                timestamp: Date.now(),
-                monthKey,
-                label: this.getMonthLabel(new Date()),
-                items: itemsWithNames
-            };
         } catch (err) {
-            console.error('Error loading history summary:', err);
-            chart.innerHTML = '<p class="op-muted">No se pudo cargar el histórico.</p>';
+             console.error(err);
+             tbody.innerHTML = '<tr><td class="op-error">Error al cargar historial.</td></tr>';
         }
     },
+
 
     applyAnalysisSummary: function(data, panel) {
         const reportsEl = panel.querySelector('[data-summary="reports"]');

@@ -275,10 +275,18 @@ with check (public.current_role() in ('admin', 'gerencia'));
 alter table public.consumption_reports enable row level security;
 alter table public.consumption_details enable row level security;
 
+create policy "consumption_reports_read"
+on public.consumption_reports for select
+using (public.current_role() in ('admin', 'gerencia', 'logistica', 'operativo'));
+
 create policy "consumption_reports_admin"
 on public.consumption_reports for all
 using (public.is_admin())
 with check (public.is_admin());
+
+create policy "consumption_details_read"
+on public.consumption_details for select
+using (public.current_role() in ('admin', 'gerencia', 'logistica', 'operativo'));
 
 create policy "consumption_details_admin"
 on public.consumption_details for all
