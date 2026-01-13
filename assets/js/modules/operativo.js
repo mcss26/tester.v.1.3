@@ -109,6 +109,8 @@ window.OperativoModule = {
         // Common Dashboard bindings
         document.getElementById('btn-close-dashboard')?.addEventListener('click', () => {
             document.getElementById('staff-dashboard').classList.add('hidden');
+            this.restoreActions();
+            this.toggleActionContainer(true);
         });
 
         document.getElementById('btn-logout')?.addEventListener('click', async () => {
@@ -266,11 +268,60 @@ window.OperativoModule = {
     },
 
     toggleActionContainer: function(show) {
-        // ERP only needs this check usually
+        // Legacy support if needed, or simple toggle
         const actionContainer = document.getElementById('action-container');
         if (actionContainer) {
-            if (show) actionContainer.classList.remove('hidden');
-            else actionContainer.classList.add('hidden');
+            actionContainer.classList.toggle('hidden', !show);
+        }
+    },
+
+    moveActionsToHeader: function() {
+        const actions = document.querySelector('.actions-flex');
+        const header = document.querySelector('.operativo-header');
+        if (actions && header) {
+            // Check if already moved
+            if (actions.parentElement === header) return;
+            
+            // Insert after back button (index 1)
+            // Header: [BackLink, UserDiv] -> insertBefore UserDiv
+            const userDiv = header.querySelector('.operativo-user');
+            if (userDiv) {
+                header.insertBefore(actions, userDiv);
+            } else {
+                header.appendChild(actions);
+            }
+            
+            actions.classList.add('header-mode');
+            // Inline styles for header mode
+            actions.style.position = 'absolute';
+            actions.style.left = '50%';
+            actions.style.transform = 'translateX(-50%)';
+            actions.style.gap = '20px';
+            actions.style.fontSize = '0.9em';
+            actions.style.margin = '0';
+            actions.style.width = 'auto';
+        }
+    },
+
+    restoreActions: function() {
+        const actions = document.querySelector('.actions-flex');
+        const originalContainer = document.getElementById('action-container');
+        if (actions && originalContainer) {
+             if (actions.parentElement === originalContainer.querySelector('.actions-flex')?.parentElement) return; 
+
+             // Restore to .actions-flex container? No, .actions-flex IS the element.
+             // Restore to #action-container
+             originalContainer.appendChild(actions);
+             
+             actions.classList.remove('header-mode');
+             // Reset inline styles
+             actions.style.position = '';
+             actions.style.left = '';
+             actions.style.transform = '';
+             actions.style.gap = '25px';
+             actions.style.fontSize = '';
+             actions.style.margin = '';
+             actions.style.width = '';
         }
     },
 
@@ -290,6 +341,10 @@ window.OperativoModule = {
         const listContainer = document.getElementById('content-list');
         if (!dashboard || !listContainer) return;
         
+        // Sticky Nav Logic
+        this.moveActionsToHeader();
+        this.toggleActionContainer(false); // Hide the empty container
+
         dashboard.classList.remove('hidden');
         this.resetDashboard();
 
@@ -1456,6 +1511,7 @@ window.OperativoModule = {
         this.setDashboardToolbar(null); // Optional: Add search later
         this.setDashboardLoading('Cargando catálogo...');
 
+        
         if (!window.sb) {
             this.setDashboardEmpty('No se pudo conectar con el servidor.');
             return;
@@ -1474,167 +1530,157 @@ window.OperativoModule = {
             ]);
 
             if (skusResponse.error) throw skusResponse.error;
-            // Categories error is non-critical, can default to empty
             
-            const skus = skusResponse.data;
+            const skus = skusResponse.data || [];
             const categories = categoriesResponse.data || [];
             const catMap = new Map(categories.map(c => [c.id, c.nombre]));
 
+            // Store State
+            this.skuData = { skus, categories, catMap };
+            this.skuState = this.skuState || { category: 'all', search: '' };
+
             if (!this.isDashboardRequestActive(requestId, 'sku')) return;
-            if (!skus || !skus.length) {
+            if (!skus.length) {
                 this.setDashboardEmpty('No hay SKUs activos.');
                 return;
             }
 
-            const listContainer = document.getElementById('content-list');
-            if (listContainer) {
-                listContainer.textContent = '';
-                const panel = document.createElement('div');
-                panel.className = 'op-panel';
-                
-                // --- 1. Top Toolbar: Search + Category Tabs ---
-                const toolbar = document.createElement('div');
-                toolbar.className = 'op-toolbar';
-                toolbar.style.display = 'flex';
-                toolbar.style.flexDirection = 'column';
-                toolbar.style.alignItems = 'stretch';
-                toolbar.style.gap = '12px';
-                toolbar.style.marginBottom = '20px';
-                toolbar.style.padding = '0'; // Reset padding if op-toolbar has defaults not fitting column
-                toolbar.style.background = 'transparent';
-
-                // Search Bar
-                const searchContainer = document.createElement('div');
-                searchContainer.style.position = 'relative';
-                
-                const searchInput = document.createElement('input');
-                searchInput.type = 'text';
-                searchInput.placeholder = 'Buscar producto...';
-                searchInput.className = 'op-input glass-input';
-                searchInput.style.width = '100%';
-                searchInput.style.paddingLeft = '35px'; // Space for icon if added, else just breathing room
-                
-                // Icon placeholder (optional)
-                // const icon = document.createElement('span'); ...
-                
-                searchContainer.appendChild(searchInput);
-                toolbar.appendChild(searchContainer);
-
-                // Category Tabs (Scrollable)
-                const tabsContainer = document.createElement('div');
-                tabsContainer.className = 'op-tabs';
-                tabsContainer.style.display = 'flex';
-                tabsContainer.style.gap = '8px';
-                tabsContainer.style.overflowX = 'auto';
-                tabsContainer.style.whiteSpace = 'nowrap';
-                tabsContainer.style.paddingBottom = '4px'; // Hide scrollbar visual or provide space
-                // Hide scrollbar style
-                tabsContainer.style.scrollbarWidth = 'none'; 
-                
-                // Helper to create tab
-                let activeCategoryId = 'all';
-                
-                const createTab = (id, label) => {
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    // Use standard classes
-                    btn.className = `glass-button op-tab-btn ${id === activeCategoryId ? 'active' : ''}`;
-                    btn.textContent = label;
-                    btn.onclick = () => {
-                        activeCategoryId = id;
-                        // Update active state
-                        Array.from(tabsContainer.children).forEach(b => b.classList.toggle('active', b === btn));
-                        filterAndRender();
-                    };
-                    return btn;
-                };
-
-                // "Todo" Tab
-                tabsContainer.appendChild(createTab('all', 'Todo'));
-                
-                // Category Tabs
-                categories.forEach(cat => {
-                    tabsContainer.appendChild(createTab(cat.id, cat.nombre));
-                });
-
-                toolbar.appendChild(tabsContainer);
-                panel.appendChild(toolbar);
-
-                // --- 2. Table Container ---
-                const scroll = document.createElement('div');
-                scroll.className = 'op-scroll';
-                const table = document.createElement('table');
-                table.className = 'op-table';
-                table.style.width = '100%';
-                
-                // Headers are static
-                const thead = document.createElement('thead');
-                thead.innerHTML = `
-                    <tr>
-                        <th style="text-align:left">Nombre</th>
-                        <th style="text-align:left">Categoría</th>
-                        <th style="text-align:center">Unidad</th>
-                    </tr>
-                `;
-                table.appendChild(thead);
-                
-                const tbody = document.createElement('tbody');
-                table.appendChild(tbody);
-                scroll.appendChild(table);
-                panel.appendChild(scroll);
-                
-                listContainer.appendChild(panel);
-
-                // --- 3. Filter & Render Logic ---
-                const filterAndRender = () => {
-                    const term = searchInput.value.toLowerCase();
-                    
-                    const filtered = skus.filter(sku => {
-                        const matchesTerm = sku.name.toLowerCase().includes(term);
-                        const matchesCat = activeCategoryId === 'all' || sku.category_id === activeCategoryId;
-                        return matchesTerm && matchesCat;
-                    });
-
-                    tbody.innerHTML = '';
-                    
-                    if (!filtered.length) {
-                        tbody.innerHTML = '<tr><td colspan="3" class="op-muted" style="text-align:center; padding: 20px;">Sin resultados.</td></tr>';
-                        return;
-                    }
-
-                    filtered.forEach(sku => {
-                        const tr = document.createElement('tr');
-                        
-                        const tdName = document.createElement('td');
-                        tdName.textContent = sku.name;
-                        tr.appendChild(tdName);
-                        
-                        const tdCat = document.createElement('td');
-                        tdCat.textContent = catMap.get(sku.category_id) || '-';
-                        tr.appendChild(tdCat);
-                        
-                        const tdUnit = document.createElement('td');
-                        tdUnit.textContent = sku.ml ? `${sku.ml} ml` : '-';
-                        tdUnit.style.textAlign = 'center';
-                        tr.appendChild(tdUnit);
-                        
-                        tbody.appendChild(tr);
-                    });
-                };
-
-                // Bind search
-                searchInput.addEventListener('input', filterAndRender);
-                
-                // Initial Render
-                filterAndRender();
-            }
+            this.renderSKUToolbar();
+            this.renderSKUList();
 
         } catch (err) {
-            console.error('Error loading SKUs:', err);
+            console.error('Error loading SKU overview:', err);
             if (this.isDashboardRequestActive(requestId, 'sku')) {
-                this.setDashboardEmpty('Error cargando el catálogo.');
+                this.setDashboardEmpty('Error al cargar el catálogo.');
             }
         }
+    },
+
+    renderSKUToolbar: function() {
+        const toolbar = document.createElement('div');
+        toolbar.className = 'op-toolbar';
+        toolbar.style.display = 'flex';
+        toolbar.style.flexDirection = 'column';
+        toolbar.style.alignItems = 'stretch';
+        toolbar.style.gap = '12px';
+        toolbar.style.padding = '0';
+        toolbar.style.background = 'transparent';
+
+        // Search Bar
+        const searchContainer = document.createElement('div');
+        searchContainer.style.position = 'relative';
+        
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.placeholder = 'Buscar producto...';
+        searchInput.className = 'op-input glass-input';
+        searchInput.style.width = '100%';
+        searchInput.style.paddingLeft = '15px';
+        searchInput.value = this.skuState.search;
+        
+        searchInput.addEventListener('input', (e) => {
+            this.skuState.search = e.target.value.toLowerCase();
+            this.renderSKUList();
+        });
+        
+        searchContainer.appendChild(searchInput);
+        toolbar.appendChild(searchContainer);
+
+        // Category Tabs
+        const tabsContainer = document.createElement('div');
+        tabsContainer.className = 'op-tabs'; // Using standard class
+        tabsContainer.style.display = 'flex';
+        tabsContainer.style.gap = '8px';
+        tabsContainer.style.overflowX = 'auto';
+        tabsContainer.style.whiteSpace = 'nowrap';
+        tabsContainer.style.paddingBottom = '4px';
+        tabsContainer.style.scrollbarWidth = 'none'; 
+        
+        const createTab = (id, label) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `glass-button op-tab-btn ${id === this.skuState.category ? 'active' : ''}`;
+            btn.textContent = label;
+            btn.onclick = () => {
+                this.skuState.category = id;
+                this.renderSKUToolbar(); // Re-render toolbar to update active state
+                this.renderSKUList();
+            };
+            return btn;
+        };
+
+        tabsContainer.appendChild(createTab('all', 'Todo'));
+        this.skuData.categories.forEach(cat => {
+            tabsContainer.appendChild(createTab(cat.id, cat.nombre));
+        });
+
+        toolbar.appendChild(tabsContainer);
+        this.setDashboardToolbar(toolbar);
+    },
+
+    renderSKUList: function() {
+        const listContainer = document.getElementById('content-list');
+        if (!listContainer) return;
+        listContainer.textContent = '';
+
+        const panel = document.createElement('div');
+        panel.className = 'op-panel';
+        
+        const scroll = document.createElement('div');
+        scroll.className = 'op-scroll';
+        
+        const table = document.createElement('table');
+        table.className = 'op-table';
+        table.style.width = '100%';
+        
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+            <tr>
+                <th style="text-align:left">Nombre</th>
+                <th style="text-align:left">Categoría</th>
+                <th style="text-align:center">Unidad</th>
+            </tr>
+        `;
+        table.appendChild(thead);
+        
+        const tbody = document.createElement('tbody');
+        
+        const term = this.skuState.search;
+        const catId = this.skuState.category;
+        
+        const filtered = this.skuData.skus.filter(sku => {
+            const matchesTerm = sku.name.toLowerCase().includes(term);
+            const matchesCat = catId === 'all' || sku.category_id === catId;
+            return matchesTerm && matchesCat;
+        });
+
+        if (!filtered.length) {
+            tbody.innerHTML = '<tr><td colspan="3" class="op-muted" style="text-align:center; padding: 20px;">Sin resultados.</td></tr>';
+        } else {
+            filtered.forEach(sku => {
+                const tr = document.createElement('tr');
+                
+                const tdName = document.createElement('td');
+                tdName.textContent = sku.name;
+                tr.appendChild(tdName);
+                
+                const tdCat = document.createElement('td');
+                tdCat.textContent = this.skuData.catMap.get(sku.category_id) || '-';
+                tr.appendChild(tdCat);
+                
+                const tdUnit = document.createElement('td');
+                tdUnit.textContent = sku.ml ? `${sku.ml} ml` : '-';
+                tdUnit.style.textAlign = 'center';
+                tr.appendChild(tdUnit);
+                
+                tbody.appendChild(tr);
+            });
+        }
+        
+        table.appendChild(tbody);
+        scroll.appendChild(table);
+        panel.appendChild(scroll);
+        listContainer.appendChild(panel);
     }
 };
 
