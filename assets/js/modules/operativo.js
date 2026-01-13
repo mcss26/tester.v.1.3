@@ -671,8 +671,9 @@ window.OperativoModule = {
 
     loadRequestsOverview: async function(requestId) {
         if (!this.isDashboardRequestActive(requestId, 'requests')) return;
-        this.setDashboardTitle('Solicitudes');
-        this.setDashboardSubtitle('Pendientes, aprobadas, en reposición y completadas.');
+        if (!this.isDashboardRequestActive(requestId, 'requests')) return;
+        this.setDashboardTitle('');
+        this.setDashboardSubtitle('');
         this.setDashboardToolbar(this.buildActionToolbar('Actualizar', () => this.loadRequestsOverview(this.dashboardRequestId)));
         this.setDashboardLoading('Cargando solicitudes...');
         if (!window.sb) {
@@ -739,6 +740,7 @@ window.OperativoModule = {
         const groupOrder = ['pending', 'approved', 'in_replenishment', 'completed', 'other'];
         groupOrder.forEach(key => {
             const groupItems = groups[key];
+            if (!groupItems.length) return; // Skip empty groups entirely
 
             const panel = document.createElement('div');
             panel.className = 'op-panel';
@@ -750,13 +752,9 @@ window.OperativoModule = {
 
             const list = document.createElement('div');
             list.className = 'op-chart';
-
-            if (!groupItems.length) {
-                const empty = document.createElement('p');
-                empty.className = 'op-muted';
-                empty.textContent = 'Sin solicitudes en este estado.';
-                list.appendChild(empty);
-            }
+            
+            // Empty check removed because we skip empty groups above
+            // if (!groupItems.length) { ... }
 
             groupItems.forEach(req => {
                 const detail = document.createElement('details');
@@ -839,28 +837,28 @@ window.OperativoModule = {
 
     loadAnalysisOverview: async function(requestId) {
         if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
-        this.setDashboardTitle('Cargar consumos');
+        if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
+        this.setDashboardTitle('Cargar Consumos');
         this.setDashboardSubtitle('');
-        this.setDashboardToolbar(null);
         this.analysisTab = 'importar';
+
         if (!window.sb) {
             this.setDashboardEmpty('No se pudo conectar con el servidor.');
             return;
         }
 
-        const listContainer = document.getElementById('content-list');
-        if (!listContainer) return;
-        listContainer.textContent = '';
-
-        const panel = document.createElement('div');
-        panel.className = 'op-panel';
-
-        const tabs = document.createElement('div');
-        tabs.className = 'op-tabs';
+        // Render Toolbar Tabs
         const tabList = [
-            { id: 'importar', label: 'Importa reporte' }
+            { id: 'importar', label: 'Importar' },
+            { id: 'analizar', label: 'Analizar' },
+            { id: 'historico', label: 'Histórico' }
         ];
 
+        const toolbarWrapper = document.createElement('div');
+        toolbarWrapper.className = 'op-toolbar';
+        const tabsContainer = document.createElement('div');
+        tabsContainer.className = 'op-tabs';
+        
         tabList.forEach(tab => {
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -870,19 +868,52 @@ window.OperativoModule = {
             btn.addEventListener('click', () => {
                 this.analysisTab = tab.id;
                 this.handleAnalysisTabChange(tab.id, requestId);
-                tabs.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                tabsContainer.querySelectorAll('button').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
             });
-            tabs.appendChild(btn);
+            tabsContainer.appendChild(btn);
         });
-        panel.appendChild(tabs);
+        toolbarWrapper.appendChild(tabsContainer);
+        this.setDashboardToolbar(toolbarWrapper);
 
-        const importarPanel = this.buildAnalysisImportPanel();
+        // Render Content Panels
+        const listContainer = document.getElementById('content-list');
+        if (!listContainer) return;
+        listContainer.textContent = '';
 
-        panel.appendChild(importarPanel);
-        listContainer.appendChild(panel);
+        const mainPanel = document.createElement('div');
+        mainPanel.className = 'op-panel';
 
-        this.analysisPanels = null;
+        // 1. Import Panel
+        const importPanel = this.buildAnalysisImportPanel();
+        
+        // 2. Analyze Panel (Empty placeholder)
+        const analyzePanel = document.createElement('div');
+        analyzePanel.className = 'op-tab-panel hidden';
+        analyzePanel.dataset.tab = 'analizar';
+        // Basic structure for analyze summary
+        analyzePanel.innerHTML = `
+            <div data-summary="reports"></div>
+            <div data-summary="total"></div>
+            <div data-summary="latest"></div>
+        `;
+
+        // 3. History Panel (Empty placeholder)
+        const historyPanel = document.createElement('div');
+        historyPanel.className = 'op-tab-panel hidden';
+        historyPanel.dataset.tab = 'historico';
+
+        mainPanel.appendChild(importPanel);
+        mainPanel.appendChild(analyzePanel);
+        mainPanel.appendChild(historyPanel);
+        listContainer.appendChild(mainPanel);
+
+        this.analysisPanels = {
+            importar: importPanel,
+            analizar: analyzePanel,
+            historico: historyPanel
+        };
+        
         this.showAnalysisTab(this.analysisTab);
     },
 
