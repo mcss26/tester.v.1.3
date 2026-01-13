@@ -22,43 +22,92 @@ window.LogisticaModule = {
         this.session = session;
         await this.loadUserProfile(session.user.id);
         
-        // 2. Load Open Events
-        await this.loadOpenEvents();
-
-        // 3. UI Bindings
-        this.bindUI();
+        // 2. Identify Page Context
+        const page = document.body.dataset.page; 
+        
+        if (page === 'erp') {
+            await this.loadOpenEvents();
+            this.bindUI_ERP();
+        } else {
+             // Index page
+             this.bindUI_Index();
+        }
     },
 
-    bindUI: function() {
-        // Actions
-        document.getElementById('btn-ready-to-go')?.addEventListener('click', () => {
-             alert('Módulo Ready-to-go: Próximamente');
-        });
-        
-        document.getElementById('btn-nomina')?.addEventListener('click', () => {
-             alert('Módulo Nómina: Próximamente');
-        });
-
-        document.getElementById('btn-replenishment')?.addEventListener('click', () => {
-             alert('Módulo Reposiciones: Próximamente');
-        });
-
-        document.getElementById('btn-arrivals')?.addEventListener('click', () => {
-             alert('Módulo Arribos: Próximamente');
-        });
-        
-        // Close Dashboard
-        document.getElementById('btn-close-dashboard')?.addEventListener('click', () => {
-            document.getElementById('staff-dashboard').classList.add('hidden');
-        });
-
-        // Logout
+    bindUI_Index: function() {
         document.getElementById('btn-logout')?.addEventListener('click', async () => {
             if (window.sb) {
                 await window.sb.auth.signOut();
                 window.location.href = '../../login.html';
             }
         });
+    },
+
+    bindUI_ERP: function() {
+        // Actions
+        document.getElementById('btn-ready-to-go')?.addEventListener('click', () => {
+             this.openDashboard('ready-to-go');
+        });
+        
+        document.getElementById('btn-nomina')?.addEventListener('click', () => {
+             this.openDashboard('nomina');
+        });
+
+        document.getElementById('btn-requests')?.addEventListener('click', () => {
+             this.openDashboard('requests');
+        });
+
+        document.getElementById('btn-replenishment')?.addEventListener('click', () => {
+             this.openDashboard('replenishment');
+        });
+        
+        // Close Dashboard
+        document.getElementById('btn-close-dashboard')?.addEventListener('click', () => {
+            document.getElementById('staff-dashboard').classList.add('hidden');
+            this.toggleActionContainer(true);
+        });
+    },
+
+    openDashboard: function(mode) {
+        // Enforce Event Selection? 
+        if (!this.activeEvent) {
+             // For now, simple alert or check
+             // alert('Selecciona una fecha primero.'); // UX choice: maybe allow browsing without event?
+             // But logistics is usually event-centric.
+             // Let's assume yes.
+        }
+
+        const dashboard = document.getElementById('staff-dashboard');
+        const title = document.getElementById('dashboard-title');
+        const list = document.getElementById('content-list');
+        
+        if (dashboard && list) {
+            list.textContent = ''; 
+            dashboard.classList.remove('hidden');
+            this.toggleActionContainer(false);
+            
+            if (title) title.textContent = this.getModeTitle(mode);
+            
+            const msg = document.createElement('p');
+            msg.className = 'op-muted op-message';
+            msg.textContent = 'Módulo en desarrollo: ' + mode;
+            list.appendChild(msg);
+        }
+    },
+
+    getModeTitle: function(mode) {
+        const map = {
+            'ready-to-go': 'Ready-to-go',
+            'nomina': 'Personal',
+            'requests': 'Solicitudes',
+            'replenishment': 'Reposiciones'
+        };
+        return map[mode] || mode;
+    },
+
+    toggleActionContainer: function(show) {
+        const container = document.getElementById('action-container');
+        if (container) container.classList.toggle('hidden', !show);
     },
 
     loadUserProfile: async function(userId) {
@@ -134,11 +183,11 @@ window.LogisticaModule = {
         chipEl.classList.add('active');
 
         // Show Action Container
-        const actionContainer = document.getElementById('action-container');
-        if(actionContainer) actionContainer.classList.remove('hidden');
+        this.toggleActionContainer(true);
         
         // Hide dashboard if open
-        document.getElementById('staff-dashboard').classList.add('hidden');
+        const dash = document.getElementById('staff-dashboard');
+        if (dash) dash.classList.add('hidden');
     }
 };
 

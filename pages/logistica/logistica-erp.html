@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Logística ERP | Midnight Club</title>
+  <link rel="stylesheet" href="../../assets/css/index.css" />
+  
+  <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script defer src="../../assets/js/core/config.js"></script>
+  <script defer src="../../assets/js/modules/logistica.js"></script>
+</head>
+<body class="welcome-screen" data-page="erp">
+    <header class="operativo-header" style="justify-content: space-between; padding: 20px; width: 100%; position: absolute; top: 0; left: 0; z-index: 10;">
+      <a class="footer-link back-link" href="./logistica-index.html" style="margin: 0; position: relative; z-index: 20;">
+        &larr; Volver
+      </a>
+      <div class="operativo-user">
+        <p class="operativo-user-mode" style="font-size: 14px; opacity: 1; font-weight: 700;">LOGÍSTICA</p>
+      </div>
+    </header>
+
+  <main class="center-content" style="padding-top: 60px;">
+
+    <!-- Date Selection -->
+    <section class="dates-section fade-in-delayed">
+      <div id="date-chips" class="chips-row">
+        <!-- Filled by JS -->
+        <div class="skeleton-chip"></div>
+        <div class="skeleton-chip"></div>
+      </div>
+    </section>
+
+    <!-- Actions -->
+    <section id="action-container" class="action-section fade-in hidden">
+      <div class="actions-flex" style="display: flex; gap: 25px; justify-content: center; flex-wrap: wrap;">
+        <button id="btn-ready-to-go" class="footer-link" type="button" style="background:none; border:none; cursor:pointer;">
+          Ready-to-go
+        </button>
+
+        <button id="btn-nomina" class="footer-link" type="button" style="background:none; border:none; cursor:pointer;">
+          Personal
+        </button>
+
+        <button id="btn-requests" class="footer-link" type="button" style="background:none; border:none; cursor:pointer;">
+          Solicitudes
+        </button>
+
+        <button id="btn-replenishment" class="footer-link" type="button" style="background:none; border:none; cursor:pointer;">
+          Reposiciones
+        </button>
+      </div>
+    </section>
+
+    <!-- Dashboard/Work Area -->
+    <section id="staff-dashboard" class="staff-dashboard hidden">
+      <header class="dashboard-header" style="align-items: flex-start;">
+        <div style="flex: 1;">
+          <h3 id="dashboard-title" class="dashboard-title">Dashboard</h3>
+          <p id="dashboard-subtitle" class="dashboard-subtitle"></p>
+          <div id="dashboard-toolbar" class="hidden" style="margin-top: 10px;"></div>
+        </div>
+        <button class="btn-icon" id="btn-close-dashboard" type="button" aria-label="Cerrar panel" style="margin-left: 15px;">&times;</button>
+      </header>
+      <div id="content-list" class="staff-list"></div>
+    </section>
+
+  </main>
+</body>
+</html>
