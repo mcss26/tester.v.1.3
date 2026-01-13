@@ -16,6 +16,11 @@ window.OperativoModule = {
         summary: null,
         history: null
     },
+    dataCache: {
+        skus: null,
+        categories: null,
+        timestamp: 0
+    },
     analysisPanels: null,
     dashboardMode: null,
     dashboardRequestId: 0,
@@ -734,7 +739,7 @@ window.OperativoModule = {
         if (!this.isDashboardRequestActive(requestId, 'requests')) return;
         this.setDashboardTitle('');
         this.setDashboardSubtitle('');
-        this.setDashboardToolbar(this.buildActionToolbar('Actualizar', () => this.loadRequestsOverview(this.dashboardRequestId)));
+        this.setDashboardToolbar(null); // Remove Update button
         this.setDashboardLoading('Cargando solicitudes...');
         if (!window.sb) {
             this.setDashboardEmpty('No se pudo conectar con el servidor.');
@@ -898,7 +903,7 @@ window.OperativoModule = {
     loadAnalysisOverview: async function(requestId) {
         if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
         if (!this.isDashboardRequestActive(requestId, 'analysis')) return;
-        this.setDashboardTitle('Cargar Consumos');
+        this.setDashboardTitle(''); // Remove title
         this.setDashboardSubtitle('');
         this.analysisTab = 'importar';
 
@@ -910,7 +915,7 @@ window.OperativoModule = {
         // Render Toolbar Tabs
         const tabList = [
             { id: 'importar', label: 'Importar' },
-            { id: 'analizar', label: 'Analizar' },
+            // 'analizar' tab removed
             { id: 'historico', label: 'Histórico' }
         ];
 
@@ -1506,7 +1511,7 @@ window.OperativoModule = {
 
     loadSKUOverview: async function(requestId) {
         if (!this.isDashboardRequestActive(requestId, 'sku')) return;
-        this.setDashboardTitle('Visor de SKU');
+        this.setDashboardTitle('');
         this.setDashboardSubtitle('');
         this.setDashboardToolbar(null); // Optional: Add search later
         this.setDashboardLoading('Cargando catálogo...');
@@ -1514,6 +1519,22 @@ window.OperativoModule = {
         
         if (!window.sb) {
             this.setDashboardEmpty('No se pudo conectar con el servidor.');
+            return;
+        }
+
+        // 1. Try Cache
+        const now = Date.now();
+        if (this.dataCache.skus && this.dataCache.categories && (now - this.dataCache.timestamp < 300000)) {
+            this.skuData = { 
+                skus: this.dataCache.skus, 
+                categories: this.dataCache.categories, 
+                catMap: new Map(this.dataCache.categories.map(c => [c.id, c.nombre])) 
+            };
+            this.skuState = this.skuState || { category: 'all', search: '' };
+            if (this.isDashboardRequestActive(requestId, 'sku')) {
+                this.renderSKUToolbar();
+                this.renderSKUList();
+            }
             return;
         }
 
@@ -1534,6 +1555,11 @@ window.OperativoModule = {
             const skus = skusResponse.data || [];
             const categories = categoriesResponse.data || [];
             const catMap = new Map(categories.map(c => [c.id, c.nombre]));
+
+            // Update Cache
+            this.dataCache.skus = skus;
+            this.dataCache.categories = categories;
+            this.dataCache.timestamp = Date.now();
 
             // Store State
             this.skuData = { skus, categories, catMap };
@@ -1560,41 +1586,22 @@ window.OperativoModule = {
         const toolbar = document.createElement('div');
         toolbar.className = 'op-toolbar';
         toolbar.style.display = 'flex';
-        toolbar.style.flexDirection = 'column';
-        toolbar.style.alignItems = 'stretch';
+        toolbar.style.flexDirection = 'row'; // Row layout
+        toolbar.style.justifyContent = 'space-between';
+        toolbar.style.alignItems = 'center'; // Center vertically
         toolbar.style.gap = '12px';
         toolbar.style.padding = '0';
         toolbar.style.background = 'transparent';
 
-        // Search Bar
-        const searchContainer = document.createElement('div');
-        searchContainer.style.position = 'relative';
-        
-        const searchInput = document.createElement('input');
-        searchInput.type = 'text';
-        searchInput.placeholder = 'Buscar producto...';
-        searchInput.className = 'op-input glass-input';
-        searchInput.style.width = '100%';
-        searchInput.style.paddingLeft = '15px';
-        searchInput.value = this.skuState.search;
-        
-        searchInput.addEventListener('input', (e) => {
-            this.skuState.search = e.target.value.toLowerCase();
-            this.renderSKUList();
-        });
-        
-        searchContainer.appendChild(searchInput);
-        toolbar.appendChild(searchContainer);
-
-        // Category Tabs
+        // 1. Category Tabs (Left, Flex Grow)
         const tabsContainer = document.createElement('div');
-        tabsContainer.className = 'op-tabs'; // Using standard class
+        tabsContainer.className = 'op-tabs'; 
         tabsContainer.style.display = 'flex';
         tabsContainer.style.gap = '8px';
         tabsContainer.style.overflowX = 'auto';
         tabsContainer.style.whiteSpace = 'nowrap';
-        tabsContainer.style.paddingBottom = '4px';
         tabsContainer.style.scrollbarWidth = 'none'; 
+        tabsContainer.style.flex = '1'; // Take available space
         
         const createTab = (id, label) => {
             const btn = document.createElement('button');
@@ -1603,7 +1610,7 @@ window.OperativoModule = {
             btn.textContent = label;
             btn.onclick = () => {
                 this.skuState.category = id;
-                this.renderSKUToolbar(); // Re-render toolbar to update active state
+                this.renderSKUToolbar(); 
                 this.renderSKUList();
             };
             return btn;
@@ -1615,6 +1622,35 @@ window.OperativoModule = {
         });
 
         toolbar.appendChild(tabsContainer);
+
+        // 2. Search Bar (Right)
+        const searchContainer = document.createElement('div');
+        searchContainer.style.position = 'relative';
+        searchContainer.style.minWidth = '200px'; // Ensure some width.
+        
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.placeholder = 'Buscar...';
+        searchInput.className = 'op-input glass-input';
+        searchInput.style.width = '100%';
+        searchInput.style.paddingLeft = '15px';
+        searchInput.style.background = 'rgba(0, 0, 0, 0.6)'; // Dark background
+        searchInput.style.border = '1px solid rgba(255, 255, 255, 0.15)';
+        searchInput.style.color = 'white';
+        searchInput.value = this.skuState.search;
+        
+        let debounceTimer;
+        searchInput.addEventListener('input', (e) => {
+            this.skuState.search = e.target.value.toLowerCase();
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                this.renderSKUList();
+            }, 300);
+        });
+        
+        searchContainer.appendChild(searchInput);
+        toolbar.appendChild(searchContainer);
+
         this.setDashboardToolbar(toolbar);
     },
 
@@ -1637,7 +1673,6 @@ window.OperativoModule = {
         thead.innerHTML = `
             <tr>
                 <th style="text-align:left">Nombre</th>
-                <th style="text-align:left">Categoría</th>
                 <th style="text-align:center">Unidad</th>
             </tr>
         `;
@@ -1664,9 +1699,7 @@ window.OperativoModule = {
                 tdName.textContent = sku.name;
                 tr.appendChild(tdName);
                 
-                const tdCat = document.createElement('td');
-                tdCat.textContent = this.skuData.catMap.get(sku.category_id) || '-';
-                tr.appendChild(tdCat);
+                // Category column removed
                 
                 const tdUnit = document.createElement('td');
                 tdUnit.textContent = sku.ml ? `${sku.ml} ml` : '-';
