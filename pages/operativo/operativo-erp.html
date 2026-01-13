@@ -51,16 +51,14 @@
 
     <!-- Dashboard/Work Area -->
     <section id="staff-dashboard" class="staff-dashboard hidden">
-      <header class="dashboard-header">
-        <div>
+      <header class="dashboard-header" style="align-items: flex-start;">
+        <div style="flex: 1;">
           <h3 id="dashboard-title" class="dashboard-title">Dashboard</h3>
           <p id="dashboard-subtitle" class="dashboard-subtitle"></p>
           <div id="allocation-subtitle" class="dashboard-allocation hidden"></div>
+          <div id="dashboard-toolbar" class="hidden" style="margin-top: 10px;"></div>
         </div>
-        <div class="header-actions">
-           <div id="dashboard-toolbar" class="hidden"></div>
-           <button class="btn-icon" id="btn-close-dashboard" type="button" aria-label="Cerrar panel">&times;</button>
-        </div>
+        <button class="btn-icon" id="btn-close-dashboard" type="button" aria-label="Cerrar panel" style="margin-left: 15px;">&times;</button>
       </header>
       <div id="content-list" class="staff-list"></div>
     </section>

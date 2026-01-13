@@ -505,6 +505,8 @@ window.OperativoModule = {
         const wrapper = document.createElement('div');
         wrapper.className = 'op-toolbar';
         wrapper.style.justifyContent = 'space-between'; 
+        wrapper.style.display = 'flex';
+        wrapper.style.width = '100%';
 
         const leftGroup = document.createElement('div');
         leftGroup.className = 'op-tabs';
@@ -530,14 +532,8 @@ window.OperativoModule = {
              });
              rightGroup.appendChild(toggleBtn);
         }
-
-        const refresh = document.createElement('button');
-        refresh.type = 'button';
-        refresh.className = 'glass-button op-tab-btn';
-        refresh.textContent = 'Actualizar';
-        refresh.addEventListener('click', () => this.loadStockOverview(this.dashboardRequestId));
-        rightGroup.appendChild(refresh);
-
+        
+        // Remove Refresh button as requested
         wrapper.appendChild(rightGroup);
 
         return wrapper;
