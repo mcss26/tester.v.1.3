@@ -84,7 +84,7 @@ window.OperativoModule = {
         });
         
         document.getElementById('btn-sku-list')?.addEventListener('click', () => {
-             alert('Módulo SKU: En desarrollo');
+             this.openDashboard('sku');
         });
         
         this.bindCommonUI();
@@ -332,6 +332,11 @@ window.OperativoModule = {
         if (mode === 'access') {
             this.setDashboardTitle('Control de Accesos');
             this.setDashboardEmpty('Módulo en desarrollo: Gestión de accesos y listas.');
+            return;
+        }
+
+        if (mode === 'sku') {
+            await this.loadSKUOverview(requestId);
             return;
         }
 
@@ -1441,6 +1446,178 @@ window.OperativoModule = {
             status.className = 'staff-status staff-status-pending';
             status.textContent = 'Enviado';
             parent.appendChild(status);
+        }
+    },
+
+    loadSKUOverview: async function(requestId) {
+        if (!this.isDashboardRequestActive(requestId, 'sku')) return;
+        this.setDashboardTitle('Visor de SKU');
+        this.setDashboardSubtitle('');
+        this.setDashboardToolbar(null); // Optional: Add search later
+        this.setDashboardLoading('Cargando catálogo...');
+
+        if (!window.sb) {
+            this.setDashboardEmpty('No se pudo conectar con el servidor.');
+            return;
+        }
+
+        try {
+            const [skusResponse, categoriesResponse] = await Promise.all([
+                window.sb
+                    .from('inventory_skus')
+                    .select('id, name, ml, cost, category_id, is_active')
+                    .eq('is_active', true)
+                    .order('name'),
+                window.sb
+                    .from('categories')
+                    .select('id, nombre')
+            ]);
+
+            if (skusResponse.error) throw skusResponse.error;
+            // Categories error is non-critical, can default to empty
+            
+            const skus = skusResponse.data;
+            const categories = categoriesResponse.data || [];
+            const catMap = new Map(categories.map(c => [c.id, c.nombre]));
+
+            if (!this.isDashboardRequestActive(requestId, 'sku')) return;
+            if (!skus || !skus.length) {
+                this.setDashboardEmpty('No hay SKUs activos.');
+                return;
+            }
+
+            const listContainer = document.getElementById('content-list');
+            if (listContainer) {
+                listContainer.textContent = '';
+                const panel = document.createElement('div');
+                panel.className = 'op-panel';
+                
+                // --- 1. Top Toolbar: Search + Category Tabs ---
+                const toolbar = document.createElement('div');
+                toolbar.style.display = 'flex';
+                toolbar.style.flexDirection = 'column';
+                toolbar.style.gap = '10px';
+                toolbar.style.marginBottom = '15px';
+
+                // Search Bar
+                const searchInput = document.createElement('input');
+                searchInput.type = 'text';
+                searchInput.placeholder = 'Buscar producto...';
+                searchInput.className = 'op-input glass-input';
+                searchInput.style.width = '100%';
+                toolbar.appendChild(searchInput);
+
+                // Category Tabs (Scrollable)
+                const tabsContainer = document.createElement('div');
+                tabsContainer.className = 'op-tabs-scroll';
+                tabsContainer.style.display = 'flex';
+                tabsContainer.style.gap = '8px';
+                tabsContainer.style.overflowX = 'auto';
+                tabsContainer.style.paddingBottom = '5px';
+                
+                // Helper to create tab
+                let activeCategoryId = 'all';
+                
+                const createTab = (id, label) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = `op-tab-btn ${id === activeCategoryId ? 'active' : ''}`;
+                    btn.textContent = label;
+                    btn.style.whiteSpace = 'nowrap';
+                    btn.onclick = () => {
+                        activeCategoryId = id;
+                        // Update active state
+                        Array.from(tabsContainer.children).forEach(b => b.classList.toggle('active', b === btn));
+                        filterAndRender();
+                    };
+                    return btn;
+                };
+
+                // "Todo" Tab
+                tabsContainer.appendChild(createTab('all', 'Todo'));
+                
+                // Category Tabs
+                categories.forEach(cat => {
+                    tabsContainer.appendChild(createTab(cat.id, cat.nombre));
+                });
+
+                toolbar.appendChild(tabsContainer);
+                panel.appendChild(toolbar);
+
+                // --- 2. Table Container ---
+                const scroll = document.createElement('div');
+                scroll.className = 'op-scroll';
+                const table = document.createElement('table');
+                table.className = 'op-table';
+                table.style.width = '100%';
+                
+                // Headers are static
+                const thead = document.createElement('thead');
+                thead.innerHTML = `
+                    <tr>
+                        <th style="text-align:left">Nombre</th>
+                        <th style="text-align:left">Categoría</th>
+                        <th style="text-align:center">Unidad</th>
+                    </tr>
+                `;
+                table.appendChild(thead);
+                
+                const tbody = document.createElement('tbody');
+                table.appendChild(tbody);
+                scroll.appendChild(table);
+                panel.appendChild(scroll);
+                
+                listContainer.appendChild(panel);
+
+                // --- 3. Filter & Render Logic ---
+                const filterAndRender = () => {
+                    const term = searchInput.value.toLowerCase();
+                    
+                    const filtered = skus.filter(sku => {
+                        const matchesTerm = sku.name.toLowerCase().includes(term);
+                        const matchesCat = activeCategoryId === 'all' || sku.category_id === activeCategoryId;
+                        return matchesTerm && matchesCat;
+                    });
+
+                    tbody.innerHTML = '';
+                    
+                    if (!filtered.length) {
+                        tbody.innerHTML = '<tr><td colspan="3" class="op-muted" style="text-align:center; padding: 20px;">Sin resultados.</td></tr>';
+                        return;
+                    }
+
+                    filtered.forEach(sku => {
+                        const tr = document.createElement('tr');
+                        
+                        const tdName = document.createElement('td');
+                        tdName.textContent = sku.name;
+                        tr.appendChild(tdName);
+                        
+                        const tdCat = document.createElement('td');
+                        tdCat.textContent = catMap.get(sku.category_id) || '-';
+                        tr.appendChild(tdCat);
+                        
+                        const tdUnit = document.createElement('td');
+                        tdUnit.textContent = sku.ml ? `${sku.ml} ml` : '-';
+                        tdUnit.style.textAlign = 'center';
+                        tr.appendChild(tdUnit);
+                        
+                        tbody.appendChild(tr);
+                    });
+                };
+
+                // Bind search
+                searchInput.addEventListener('input', filterAndRender);
+                
+                // Initial Render
+                filterAndRender();
+            }
+
+        } catch (err) {
+            console.error('Error loading SKUs:', err);
+            if (this.isDashboardRequestActive(requestId, 'sku')) {
+                this.setDashboardEmpty('Error cargando el catálogo.');
+            }
         }
     }
 };
