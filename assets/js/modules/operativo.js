@@ -19,6 +19,20 @@ window.OperativoModule = {
     dashboardRequestId: 0,
     activeMode: 'erp',
 
+    // Helper to find event silently
+    findNextEventSilent: async function() {
+        if (this.activeEvent) return;
+        const { data } = await window.sb
+            .from('events')
+            .select('id, date, status')
+            .neq('status', 'closed')
+            .gte('date', new Date().toISOString().split('T')[0])
+            .order('date', { ascending: true })
+            .limit(1)
+            .single();
+        if (data) this.activeEvent = data;
+    },
+
     init: async function() {
         console.log('OperativoModule init...');
         
@@ -39,7 +53,8 @@ window.OperativoModule = {
         if (page === 'erp') {
             this.activeMode = 'erp';
             this.bindUI_ERP();
-            this.loadOpenEvents();
+            // Event logic removed as per request
+            // this.loadOpenEvents();
         } else if (page === 'crm') {
             this.activeMode = 'crm';
             this.bindUI_CRM();
@@ -258,13 +273,13 @@ window.OperativoModule = {
     },
 
     openDashboard: async function(mode) {
-        // Guard clauses
-        const eventRequiredModes = ['convocation', 'analysis', 'stock']; // Modes that absolutely need an event
+        // Guard clauses removed. Actions are always available.
+        // If an action specifically needs an event (like convocation), it should handle it internally (e.g. pick next event or show error).
         
-        if (eventRequiredModes.includes(mode) && !this.activeEvent) {
-             this.setDashboardEmpty('Selecciona una fecha para continuar.');
-             return;
-        }
+        /* 
+        const eventRequiredModes = ['convocation', 'analysis', 'stock']; 
+        if (eventRequiredModes.includes(mode) && !this.activeEvent) { ... }
+        */
 
         this.dashboardMode = mode;
         const requestId = ++this.dashboardRequestId;
@@ -277,9 +292,22 @@ window.OperativoModule = {
         this.resetDashboard();
 
         if (mode === 'convocation') {
-            this.setDashboardTitle('Convocar Equipo');
-            this.setDashboardLoading('Cargando equipo...');
-            await this.loadStaffForEvent(this.activeEvent.id, requestId);
+            this.setDashboardTitle('Personal');
+            // Auto-fetch next event if none selected? Or just list staff?
+            // "Elimina logica de eventos" implies we might not even care about the event context yet.
+            // But convocation writes to a table joined with event_id.
+            // Quick fix: Try to find the next open event silently.
+            if (!this.activeEvent) {
+                 await this.findNextEventSilent();
+            }
+            
+            if (this.activeEvent) {
+                 this.setDashboardSubtitle(`Evento: ${this.activeEvent.date}`);
+                 this.setDashboardLoading('Cargando equipo...');
+                 await this.loadStaffForEvent(this.activeEvent.id, requestId);
+            } else {
+                 this.setDashboardEmpty('No hay eventos próximos configurados.');
+            }
             return;
         }
 

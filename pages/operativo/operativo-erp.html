@@ -13,34 +13,24 @@
 </head>
 <body class="welcome-screen" data-page="erp">
   <main class="center-content">
-    <header class="operativo-header">
-      <a class="footer-link back-link" href="operativo-index.html">
+    <header class="operativo-header" style="justify-content: space-between;">
+      <a class="footer-link back-link" href="operativo-index.html" style="margin: 0;">
         &larr; Volver
       </a>
       <div class="operativo-user">
-        <p id="user-name" class="operativo-user-name">...</p>
-        <p class="operativo-user-mode">ERP MODE</p>
+        <p class="operativo-user-mode" style="font-size: 14px; opacity: 1; font-weight: 700;">ERP</p>
       </div>
     </header>
 
-    <!-- Date Selection -->
-    <section class="dates-section fade-in">
-      <div id="date-chips" class="chips-row">
-        <div class="skeleton-chip"></div>
-        <div class="skeleton-chip"></div>
-        <div class="skeleton-chip"></div>
-      </div>
-    </section>
-
     <!-- Actions -->
-    <section id="action-container" class="action-section hidden">
+    <section id="action-container" class="action-section fade-in">
       <div class="actions-grid">
         <button id="btn-open-convocation" class="action-card glass-button" type="button">
-          <span class="action-label">Convocar</span>
+          <span class="action-label">Personal</span>
         </button>
 
         <button id="btn-stock-check" class="action-card glass-button" type="button">
-          <span class="action-label">Stock Check</span>
+          <span class="action-label">Stock</span>
         </button>
 
         <button id="btn-requests" class="action-card glass-button" type="button">
