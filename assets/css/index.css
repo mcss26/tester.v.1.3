@@ -484,9 +484,18 @@ body{
   margin-top:16px;
   border:1px solid rgba(255,255,255,.10);
   text-align:left;
-  max-height:60vh;
-  overflow-y:auto;
+  height:65vh; /* Fixed height for consistency */
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
   animation:expand .4s cubic-bezier(.16,1,.3,1);
+}
+
+.staff-list{
+  width:100%;
+  flex:1;
+  overflow-y:auto;
+  position:relative;
 }
 
 .dashboard-header{
