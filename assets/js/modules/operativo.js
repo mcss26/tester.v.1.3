@@ -1534,11 +1534,11 @@ window.OperativoModule = {
         this.setDashboardToolbar(null);
 
         try {
-            // Fetch from inventory_categories (UUID)
+            // Fetch from categories (tabla que existe)
             const { data: cats, error: catErr } = await window.sb
-                .from('inventory_categories')
+                .from('categories')
                 .select('*')
-                .order('name');
+                .order('nombre');
             if (catErr) throw catErr;
 
             const { data: skus, error: skuErr } = await window.sb
@@ -1653,7 +1653,7 @@ window.OperativoModule = {
         this.createTab(container, 'all', 'Todos', this.skuState.filterCategory === 'all');
 
         this.skuState.categories.forEach(cat => {
-            this.createTab(container, cat.id, cat.name, this.skuState.filterCategory === cat.id);
+            this.createTab(container, cat.id, cat.nombre, this.skuState.filterCategory === cat.id);
         });
     },
 
@@ -1739,7 +1739,7 @@ window.OperativoModule = {
     getCatName: function(id) {
         if (!this.skuState.categories) return 'Sin Cat';
         const c = this.skuState.categories.find(cat => cat.id === id);
-        return c ? c.name : 'Sin Cat';
+        return c ? c.nombre : 'Sin Cat';
     },
 
     openSKUPanel: async function(mode, data = null) { // mode: 'sku-create', 'sku-edit', 'cat-create'
@@ -1782,7 +1782,7 @@ window.OperativoModule = {
             if (catSelect) {
                 catSelect.innerHTML = '<option value="">Seleccionar Categoría...</option>';
                 this.skuState.categories.forEach(cat => {
-                    catSelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+                    catSelect.innerHTML += `<option value="${cat.id}">${cat.nombre}</option>`;
                 });
             }
 
@@ -1858,7 +1858,7 @@ window.OperativoModule = {
         const name = document.getElementById('category-name').value.trim();
         if(!name) throw new Error('Nombre de categoría obligatorio');
 
-        const { error } = await window.sb.from('inventory_categories').insert([{ name: name }]);
+        const { error } = await window.sb.from('categories').insert([{ nombre: name }]);
         if (error) throw error;
 
         this.closeSKUPanel();
