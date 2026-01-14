@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>ERP | Midnight Club</title>
   <link rel="stylesheet" href="../../assets/css/index.css" />
+  <link rel="stylesheet" href="../../assets/css/modules/shared-modal.css" />
   
   <script defer src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script defer src="../../assets/js/core/config.js"></script>
@@ -63,5 +64,74 @@
     </section>
 
   </main>
+
+    <!-- Slide-over Panel for SKU & Category ACTIONS -->
+    <div id="panel-overlay" class="panel-overlay" aria-hidden="true"></div>
+    <aside id="panel-sku-crud" class="slide-panel" aria-hidden="true">
+        <header class="panel-header">
+            <h3 class="panel-title" id="sku-panel-title">Crear SKU</h3>
+            <button type="button" class="btn-close-panel" id="btn-close-sku-panel" aria-label="Cerrar">&times;</button>
+        </header>
+        
+        <div class="panel-body">
+            <form id="form-sku-crud" onsubmit="return false;">
+                <input type="hidden" id="sku-id" value="">
+                <input type="hidden" id="panel-mode" value="sku-create"> 
+
+                <!-- SKU FIELDS -->
+                <div id="fields-sku">
+                    <div class="form-group">
+                        <label for="sku-name">Nombre del Producto</label>
+                        <input type="text" id="sku-name" class="input-full" placeholder="Ej. Vodka Absolut Regular">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                             <label for="sku-ml">Capacidad (ml)</label>
+                             <input type="number" id="sku-ml" class="input-full" placeholder="750">
+                        </div>
+                        <div class="form-group">
+                             <label for="sku-pack">Unidades por Pack</label>
+                             <input type="number" id="sku-pack" class="input-full" placeholder="6">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                             <label for="sku-category">Categoría</label>
+                             <div class="custom-select-wrapper">
+                                 <select id="sku-category" class="item-supplier-select">
+                                     <option value="">Cargando...</option>
+                                 </select>
+                             </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="sku-active">Estado</label>
+                            <div class="custom-select-wrapper">
+                                <select id="sku-active" class="item-supplier-select">
+                                    <option value="true">Activo</option>
+                                    <option value="false">Inactivo</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CATEGORY FIELDS (Hidden by default) -->
+                <div id="fields-category" class="hidden">
+                    <div class="form-group">
+                        <label for="category-name">Nombre de Nueva Categoría</label>
+                        <input type="text" id="category-name" class="input-full" placeholder="Ej. Whiskies">
+                    </div>
+                </div>
+
+            </form>
+        </div>
+
+        <footer class="panel-footer">
+            <button type="button" class="btn-secondary" id="btn-cancel-sku">Cancelar</button>
+            <button type="button" class="btn-success" id="btn-save-sku">Confirmar</button>
+        </footer>
+    </aside>
 </body>
 </html>

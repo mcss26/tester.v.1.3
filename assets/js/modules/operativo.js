@@ -110,6 +110,14 @@ window.OperativoModule = {
         this.bindCommonUI();
     },
 
+    bindSKUEvents: function() {
+        // Panel bindings
+        document.getElementById('btn-close-sku-panel')?.addEventListener('click', () => this.closeSKUPanel());
+        document.getElementById('btn-cancel-sku')?.addEventListener('click', () => this.closeSKUPanel());
+        document.getElementById('panel-overlay')?.addEventListener('click', () => this.closeSKUPanel());
+        document.getElementById('btn-save-sku')?.addEventListener('click', () => this.saveSKU());
+    },
+
     bindCommonUI: function() {
         // Common Dashboard bindings
         document.getElementById('btn-close-dashboard')?.addEventListener('click', () => {
@@ -1509,57 +1517,51 @@ window.OperativoModule = {
         }
     },
 
+    // SKU State
+    skuState: {
+        filterCategory: 'all',
+        searchQuery: '',
+        categories: [],
+        skus: []
+    },
+
     loadSKUOverview: async function(requestId) {
-        if (!this.isDashboardRequestActive(requestId, 'sku')) return;
-        this.setDashboardTitle('');
-        this.setDashboardSubtitle('');
-        this.setDashboardToolbar(null); // Optional: Add search later
-        this.setDashboardLoading('Cargando catálogo...');
-
+        if (!window.sb) return;
         
-        if (!window.sb) {
-            this.setDashboardEmpty('No se pudo conectar con el servidor.');
-            return;
-        }
-
-        // 1. Try Cache
-        const now = Date.now();
-        if (this.dataCache.skus && this.dataCache.categories && (now - this.dataCache.timestamp < 300000)) {
-            this.skuData = { 
-                skus: this.dataCache.skus, 
-                categories: this.dataCache.categories, 
-                catMap: new Map(this.dataCache.categories.map(c => [c.id, c.nombre])) 
-            };
-            this.skuState = this.skuState || { category: 'all', search: '' };
-            if (this.isDashboardRequestActive(requestId, 'sku')) {
-                this.renderSKUToolbar();
-                this.renderSKUList();
-            }
-            return;
-        }
+        this.setDashboardTitle('Productos');
+        this.setDashboardSubtitle('Cargando...');
+        this.setDashboardLoading('Obteniendo catálogo...');
+        this.setDashboardToolbar(null);
 
         try {
-            const [skusResponse, categoriesResponse] = await Promise.all([
-                window.sb
-                    .from('inventory_skus')
-                    .select('id, name, ml, cost, category_id, is_active')
-                    .eq('is_active', true)
-                    .order('name'),
-                window.sb
-                    .from('categories')
-                    .select('id, nombre')
-            ]);
+            // Fetch from inventory_categories (UUID)
+            const { data: cats, error: catErr } = await window.sb
+                .from('inventory_categories')
+                .select('*')
+                .order('name');
+            if (catErr) throw catErr;
 
-            if (skusResponse.error) throw skusResponse.error;
+            const { data: skus, error: skuErr } = await window.sb
+                .from('inventory_skus')
+                .select('*')
+                .order('name');
+            if (skuErr) throw skuErr;
+
+            if (!this.isDashboardRequestActive(requestId, 'sku')) return;
             
-            const skus = skusResponse.data || [];
-            const categories = categoriesResponse.data || [];
-            const catMap = new Map(categories.map(c => [c.id, c.nombre]));
+            // Init State
+            this.skuState.categories = cats || [];
+            this.skuState.skus = skus || [];
+            this.skuState.filterCategory = 'all';
+            this.skuState.searchQuery = '';
 
-            // Update Cache
-            this.dataCache.skus = skus;
-            this.dataCache.categories = categories;
-            this.dataCache.timestamp = Date.now();
+            // Render
+            this.setDashboardTitle('Productos');
+            this.setDashboardSubtitle(`${this.skuState.skus.length} SKUs`);
+            
+            this.renderSKUDashboardLayout();
+            this.renderSKUTabs();
+            this.renderSKUList();
 
             // Store State
             this.skuData = { skus, categories, catMap };
@@ -1569,151 +1571,331 @@ window.OperativoModule = {
             if (!skus.length) {
                 this.setDashboardEmpty('No hay SKUs activos.');
                 return;
+                // return; // Don't return, still render toolbar for creation
             }
 
-            this.renderSKUToolbar();
+            this.renderSKUDashboardLayout();
+            this.renderSKUTabs();
             this.renderSKUList();
 
+
         } catch (err) {
-            console.error('Error loading SKU overview:', err);
+            console.error(err);
             if (this.isDashboardRequestActive(requestId, 'sku')) {
-                this.setDashboardEmpty('Error al cargar el catálogo.');
+                this.setDashboardEmpty('Error: ' + err.message);
             }
         }
     },
 
-    renderSKUToolbar: function() {
+    renderSKUDashboardLayout: function() {
         const toolbar = document.createElement('div');
-        toolbar.className = 'op-toolbar';
-        toolbar.style.display = 'flex';
-        toolbar.style.flexDirection = 'row'; // Row layout
-        toolbar.style.justifyContent = 'space-between';
-        toolbar.style.alignItems = 'center'; // Center vertically
-        toolbar.style.gap = '12px';
-        toolbar.style.padding = '0';
-        toolbar.style.background = 'transparent';
+        toolbar.className = 'sku-toolbar-container';
+        toolbar.style.padding = '0 0 15px 0';
 
-        // 1. Category Tabs (Left, Flex Grow)
-        const tabsContainer = document.createElement('div');
-        tabsContainer.className = 'op-tabs'; 
-        tabsContainer.style.display = 'flex';
-        tabsContainer.style.gap = '8px';
-        tabsContainer.style.overflowX = 'auto';
-        tabsContainer.style.whiteSpace = 'nowrap';
-        tabsContainer.style.scrollbarWidth = 'none'; 
-        tabsContainer.style.flex = '1'; // Take available space
-        
-        const createTab = (id, label) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = `glass-button op-tab-btn ${id === this.skuState.category ? 'active' : ''}`;
-            btn.textContent = label;
-            btn.onclick = () => {
-                this.skuState.category = id;
-                this.renderSKUToolbar(); 
-                this.renderSKUList();
-            };
-            return btn;
-        };
+        // Controls Row (Search + Buttons)
+        const controlsRow = document.createElement('div');
+        controlsRow.style.display = 'flex';
+        controlsRow.style.gap = '10px';
+        controlsRow.style.marginBottom = '15px';
+        controlsRow.style.alignItems = 'center';
 
-        tabsContainer.appendChild(createTab('all', 'Todo'));
-        this.skuData.categories.forEach(cat => {
-            tabsContainer.appendChild(createTab(cat.id, cat.nombre));
-        });
-
-        toolbar.appendChild(tabsContainer);
-
-        // 2. Search Bar (Right)
-        const searchContainer = document.createElement('div');
-        searchContainer.style.position = 'relative';
-        searchContainer.style.minWidth = '200px'; // Ensure some width.
-        
+        // Search
         const searchInput = document.createElement('input');
         searchInput.type = 'text';
-        searchInput.placeholder = 'Buscar...';
-        searchInput.className = 'op-input glass-input';
-        searchInput.style.width = '100%';
-        searchInput.style.paddingLeft = '15px';
-        searchInput.style.background = 'rgba(0, 0, 0, 0.6)'; // Dark background
-        searchInput.style.border = '1px solid rgba(255, 255, 255, 0.15)';
-        searchInput.style.color = 'white';
-        searchInput.value = this.skuState.search;
-        
-        let debounceTimer;
+        searchInput.placeholder = '🔍 Buscar SKU...';
+        searchInput.className = 'input-full';
+        searchInput.style.flex = '1';
+        searchInput.value = this.skuState.searchQuery; // Set initial value
         searchInput.addEventListener('input', (e) => {
-            this.skuState.search = e.target.value.toLowerCase();
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
-                this.renderSKUList();
-            }, 300);
+            this.skuState.searchQuery = e.target.value.toLowerCase();
+            this.renderSKUList();
         });
-        
-        searchContainer.appendChild(searchInput);
-        toolbar.appendChild(searchContainer);
+
+        // Add Category Button
+        const btnCat = document.createElement('button');
+        btnCat.className = 'btn-secondary';
+        btnCat.textContent = '+ Cat';
+        btnCat.style.minWidth = '60px';
+        btnCat.onclick = () => this.openSKUPanel('cat-create');
+
+        // Add SKU Button
+        const btnSku = document.createElement('button');
+        btnSku.className = 'btn-success';
+        btnSku.textContent = '+ SKU';
+        btnSku.style.minWidth = '80px';
+        btnSku.onclick = () => this.openSKUPanel('sku-create');
+
+        controlsRow.appendChild(searchInput);
+        controlsRow.appendChild(btnCat);
+        controlsRow.appendChild(btnSku);
+
+        // Tabs Row (Scrollable)
+        const tabsContainer = document.createElement('div');
+        tabsContainer.id = 'sku-tabs-scroll';
+        tabsContainer.style.overflowX = 'auto';
+        tabsContainer.style.whiteSpace = 'nowrap';
+        tabsContainer.style.paddingBottom = '5px';
+        tabsContainer.style.display = 'flex';
+        tabsContainer.style.gap = '10px';
+         tabsContainer.style.scrollbarWidth = 'none';
+
+        toolbar.appendChild(controlsRow);
+        toolbar.appendChild(tabsContainer);
 
         this.setDashboardToolbar(toolbar);
     },
 
-    renderSKUList: function() {
-        const listContainer = document.getElementById('content-list');
-        if (!listContainer) return;
-        listContainer.textContent = '';
+    renderSKUTabs: function() {
+        const container = document.getElementById('sku-tabs-scroll');
+        if (!container) return;
+        container.innerHTML = '';
 
-        const panel = document.createElement('div');
-        panel.className = 'op-panel';
+        this.createTab(container, 'all', 'Todos', this.skuState.filterCategory === 'all');
+
+        this.skuState.categories.forEach(cat => {
+            this.createTab(container, cat.id, cat.name, this.skuState.filterCategory === cat.id);
+        });
+    },
+
+    createTab: function(container, id, label, isActive) {
+        const btn = document.createElement('button');
+        btn.textContent = label;
+        btn.className = isActive ? 'tab-pill active' : 'tab-pill';
+        btn.style.padding = '6px 16px';
+        btn.style.borderRadius = '20px';
+        btn.style.border = '1px solid rgba(255,255,255,0.1)';
+        btn.style.background = isActive ? 'var(--accent, #ff3b30)' : 'rgba(255,255,255,0.05)';
+        btn.style.color = '#fff';
+        btn.style.fontSize = '13px';
+        btn.style.cursor = 'pointer';
+        btn.style.transition = 'all 0.2s';
         
-        const scroll = document.createElement('div');
-        scroll.className = 'op-scroll';
-        
-        const table = document.createElement('table');
-        table.className = 'op-table';
-        table.style.width = '100%';
-        
-        const thead = document.createElement('thead');
-        thead.innerHTML = `
-            <tr>
-                <th style="text-align:left">Nombre</th>
-                <th style="text-align:center">Unidad</th>
-            </tr>
-        `;
-        table.appendChild(thead);
-        
-        const tbody = document.createElement('tbody');
-        
-        const term = this.skuState.search;
-        const catId = this.skuState.category;
-        
-        const filtered = this.skuData.skus.filter(sku => {
-            const matchesTerm = sku.name.toLowerCase().includes(term);
-            const matchesCat = catId === 'all' || sku.category_id === catId;
-            return matchesTerm && matchesCat;
+        btn.onclick = () => {
+            this.skuState.filterCategory = id;
+            this.renderSKUTabs();
+            this.renderSKUList();
+        };
+
+        container.appendChild(btn);
+    },
+
+    renderSKUList: function() {
+        const listDiv = document.getElementById('content-list');
+        if (!listDiv) return;
+        listDiv.innerHTML = '';
+
+        let filtered = this.skuState.skus.filter(s => {
+            if (this.skuState.filterCategory !== 'all' && s.category_id !== this.skuState.filterCategory) return false;
+            if (this.skuState.searchQuery && !s.name.toLowerCase().includes(this.skuState.searchQuery)) return false;
+            return true;
         });
 
-        if (!filtered.length) {
-            tbody.innerHTML = '<tr><td colspan="3" class="op-muted" style="text-align:center; padding: 20px;">Sin resultados.</td></tr>';
-        } else {
-            filtered.forEach(sku => {
-                const tr = document.createElement('tr');
-                
-                const tdName = document.createElement('td');
-                tdName.textContent = sku.name;
-                tr.appendChild(tdName);
-                
-                // Category column removed
-                
-                const tdUnit = document.createElement('td');
-                tdUnit.textContent = sku.ml ? `${sku.ml} ml` : '-';
-                tdUnit.style.textAlign = 'center';
-                tr.appendChild(tdUnit);
-                
-                tbody.appendChild(tr);
-            });
+        if (filtered.length === 0) {
+            listDiv.innerHTML = '<div style="text-align:center; padding:40px; color:rgba(255,255,255,0.4);">No se encontraron productos.</div>';
+            return;
         }
+
+        const grid = document.createElement('div');
+        grid.style.display = 'grid';
+        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
+        grid.style.gap = '15px';
+        grid.style.paddingBottom = '80px';
+
+        filtered.forEach(sku => {
+            const card = document.createElement('div');
+            card.className = 'assign-item-card';
+            card.style.display = 'flex';
+            card.style.justifyContent = 'space-between';
+            card.style.alignItems = 'center';
+            card.style.padding = '16px';
+            
+            const info = document.createElement('div');
+            const catName = this.getCatName(sku.category_id);
+            const statusColor = sku.is_active ? '#30d158' : '#ff453a';
+
+            info.innerHTML = `
+                <div style="font-weight:600; font-size:15px; margin-bottom:4px;">${sku.name}</div>
+                <div style="font-size:12px; color:rgba(255,255,255,0.5);">
+                    <span style="color:${statusColor}">●</span> 
+                    ${catName} • ${sku.ml ? sku.ml + 'ml' : '-'} • Pack: ${sku.pack_quantity || 1}
+                </div>
+            `;
+
+            const btnEdit = document.createElement('button');
+            btnEdit.className = 'btn-secondary';
+            btnEdit.textContent = 'Editar';
+            btnEdit.style.padding = '6px 12px';
+            btnEdit.style.fontSize = '12px';
+            btnEdit.onclick = () => this.openSKUPanel('sku-edit', sku);
+
+            card.appendChild(info);
+            card.appendChild(btnEdit);
+            grid.appendChild(card);
+        });
+
+        listDiv.appendChild(grid);
+    },
+
+    getCatName: function(id) {
+        if (!this.skuState.categories) return 'Sin Cat';
+        const c = this.skuState.categories.find(cat => cat.id === id);
+        return c ? c.name : 'Sin Cat';
+    },
+
+    openSKUPanel: async function(mode, data = null) { // mode: 'sku-create', 'sku-edit', 'cat-create'
+        const panel = document.getElementById('panel-sku-crud');
+        const overlay = document.getElementById('panel-overlay');
+        const modeInput = document.getElementById('panel-mode');
+        const title = document.getElementById('sku-panel-title');
+        const form = document.getElementById('form-sku-crud');
         
-        table.appendChild(tbody);
-        scroll.appendChild(table);
-        panel.appendChild(scroll);
-        listContainer.appendChild(panel);
+        const fieldSku = document.getElementById('fields-sku');
+        const fieldCat = document.getElementById('fields-category');
+        const btnSave = document.getElementById('btn-save-sku');
+
+        if (!panel) return;
+
+        // Re-bind events
+        document.getElementById('btn-close-sku-panel').onclick = () => this.closeSKUPanel();
+        document.getElementById('btn-cancel-sku').onclick = () => this.closeSKUPanel();
+        document.getElementById('panel-overlay').onclick = () => this.closeSKUPanel();
+        document.getElementById('btn-save-sku').onclick = () => this.saveAction();
+
+        // Reset Form
+        if (form) form.reset();
+        if (modeInput) modeInput.value = mode;
+
+        // Configure UI based on Mode
+        if (mode === 'cat-create') {
+            title.textContent = 'Nueva Categoría';
+            if (fieldSku) fieldSku.classList.add('hidden');
+            if (fieldCat) fieldCat.classList.remove('hidden');
+            btnSave.textContent = 'Crear Categoría';
+            
+        } else {
+            // SKU Modes
+            if (fieldSku) fieldSku.classList.remove('hidden');
+            if (fieldCat) fieldCat.classList.add('hidden');
+            
+            // Populate Dropdown
+            const catSelect = document.getElementById('sku-category');
+            if (catSelect) {
+                catSelect.innerHTML = '<option value="">Seleccionar Categoría...</option>';
+                this.skuState.categories.forEach(cat => {
+                    catSelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+                });
+            }
+
+            if (mode === 'sku-create') {
+                title.textContent = 'Crear SKU';
+                btnSave.textContent = 'Confirmar';
+                document.getElementById('sku-id').value = '';
+                document.getElementById('sku-active').value = 'true';
+                // Pre-select current tab category if not 'all'
+                if (this.skuState.filterCategory !== 'all' && catSelect) {
+                    catSelect.value = this.skuState.filterCategory;
+                }
+            } else {
+                title.textContent = 'Editar SKU';
+                btnSave.textContent = 'Guardar';
+                // Fill Data
+                document.getElementById('sku-id').value = data.id;
+                document.getElementById('sku-name').value = data.name;
+                document.getElementById('sku-ml').value = data.ml || '';
+                document.getElementById('sku-pack').value = data.pack_quantity || '';
+                if (data.category_id && catSelect) catSelect.value = data.category_id;
+                document.getElementById('sku-active').value = data.is_active ? 'true' : 'false';
+            }
+        }
+
+        // Show Panel
+        panel.classList.remove('hidden');
+        overlay.classList.remove('hidden');
+        void panel.offsetWidth; 
+        panel.classList.add('open');
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    },
+
+    closeSKUPanel: function() {
+        const panel = document.getElementById('panel-sku-crud');
+        const overlay = document.getElementById('panel-overlay');
+        if (panel) {
+            panel.classList.remove('open');
+            overlay.classList.remove('open');
+            document.body.style.overflow = '';
+            setTimeout(() => {
+                if(!panel.classList.contains('open')) {
+                    panel.classList.add('hidden');
+                    overlay.classList.add('hidden');
+                }
+            }, 400);
+        }
+    },
+
+    saveAction: async function() {
+        const mode = document.getElementById('panel-mode')?.value || 'sku-create';
+        const btn = document.getElementById('btn-save-sku');
+        const prevText = btn.textContent;
+        btn.textContent = 'Procesando...';
+        btn.disabled = true;
+
+        try {
+            if (mode === 'cat-create') {
+                await this.saveCategory();
+            } else {
+                await this.saveSKUInternal();
+            }
+        } catch (e) {
+            alert('Error: ' + e.message);
+        } finally {
+            btn.textContent = prevText;
+            btn.disabled = false;
+        }
+    },
+
+    saveCategory: async function() {
+        const name = document.getElementById('category-name').value.trim();
+        if(!name) throw new Error('Nombre de categoría obligatorio');
+
+        const { error } = await window.sb.from('inventory_categories').insert([{ name: name }]);
+        if (error) throw error;
+
+        this.closeSKUPanel();
+        this.loadSKUOverview(this.dashboardRequestId);
+    },
+
+    saveSKUInternal: async function() {
+        const id = document.getElementById('sku-id').value;
+        const name = document.getElementById('sku-name').value.trim();
+        const ml = document.getElementById('sku-ml').value;
+        const pack = document.getElementById('sku-pack').value;
+        const cat = document.getElementById('sku-category').value;
+        const active = document.getElementById('sku-active').value === 'true';
+
+        if (!name) throw new Error('Nombre obligatorio');
+
+        const payload = {
+            name: name,
+            ml: ml ? parseFloat(ml) : null,
+            pack_quantity: pack ? parseFloat(pack) : 1,
+            category_id: cat || null,
+            is_active: active
+        };
+
+        let postError;
+        if (id) {
+            const { error } = await window.sb.from('inventory_skus').update(payload).eq('id', id);
+            postError = error;
+        } else {
+            const { error } = await window.sb.from('inventory_skus').insert([payload]);
+            postError = error;
+        }
+
+        if (postError) throw postError;
+
+        this.closeSKUPanel();
+        this.loadSKUOverview(this.dashboardRequestId);
     }
 };
 
